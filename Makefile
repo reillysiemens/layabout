@@ -21,7 +21,7 @@ SRC = layabout.py
 help: ## show Makefile help (default target)
 	@python3 -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage, and Python file artifacts
+clean: clean-build clean-pyc clean-test clean-docs ## remove all build, test, coverage, docs, and Python file artifacts
 
 clean-build: ## remove build artifacts
 	rm -rf build/
@@ -39,12 +39,13 @@ clean-pyc: ## remove Python file artifacts
 clean-test: ## remove test and coverage artifacts
 	rm -f .coverage
 
-docs: ## generate Sphinx HTML documentation, including API docs
-	# TODO: Verify if this even works.
+clean-docs:  ## remove docs artifacts
+	$(MAKE) -C docs clean
+
+docs: clean-docs ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/source/layabout.rst
 	rm -f docs/source/module.rst
-	sphinx-apidoc -f -o docs/source layabout.py
-	$(MAKE) -C docs clean
+	sphinx-apidoc -f -o docs . setup.py
 	$(MAKE) -C docs html
 
 lint: ## check style with flake8
