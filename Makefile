@@ -68,16 +68,16 @@ check-origin-remote:
 
 tag-release: check-origin-remote
 	# This doesn't have help text because it's intended to be a release helper.
-	$(eval VERSION := "v$(shell sed -rn "s/__version__ = [\'\"](.*)[\'\"]/\1/p" $(VERSION_FILE))")
+	$(eval VERSION := "v$(shell sed -rn "s/__version__ = [\'\"](.*)[\'\"]/\1/p" $(SRC))")
 	git tag -a $(VERSION) -m "Release $(VERSION)"
 	git push origin $(VERSION)
 
-release: tag-release ## package and upload for public release
-	# TODO: Use twine maybe?
-	@echo Honestly, what should this do?
+release: dist tag-release ## package and upload for public release
+	gpg --detach-sign -a dist/layabout-*.tar.gz
+	twine upload dist/*
 
 dist: clean ## build source and wheel packages
-	python setup.py sdist bdist_wheel
+	python3 setup.py sdist bdist_wheel
 
 install: clean ## install the package into the active Python's site-packages
-	python setup.py install
+	python3 setup.py install
