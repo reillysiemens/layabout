@@ -1,7 +1,7 @@
 import os
 import time
 import logging
-from typing import Any, DefaultDict, Callable, List, Tuple
+from typing import Any, DefaultDict, Dict, Callable, List, Tuple
 from inspect import signature
 from functools import wraps
 from collections import defaultdict
@@ -17,8 +17,8 @@ __author__ = 'Reilly Tucker Siemens'
 __email__ = 'reilly@tuckersiemens.com'
 __version__ = '1.0.0b'
 
-# Type alias for the complex type signature of the handlers defaultdict.
-Handlers = DefaultDict[str, List[Tuple[Callable, dict]]]
+# Private type alias for the complex type of the handlers defaultdict.
+_Handlers = DefaultDict[str, List[Tuple[Callable, dict]]]
 
 log = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ class Layabout:
         self._env_var = env_var
         self._token: str = None
         self.slack: SlackClient = None
-        self._handlers: Handlers = defaultdict(list)
+        self._handlers: _Handlers = defaultdict(list)
 
     def handle(self, type: str, kwargs: dict = None) -> Callable:
         """
@@ -106,7 +106,7 @@ class Layabout:
             TypeError: If the decorated :obj:`Callable`'s signature does not
                 permit at least 2 parameters.
         """
-        def _decorator(fn: Callable):
+        def decorator(fn: Callable) -> Callable:
             # Validate that the wrapped callable is a suitable event handler.
             sig = signature(fn)
             if len(sig.parameters) < 2:
@@ -118,12 +118,13 @@ class Layabout:
             self._handlers[type].append((fn, kwargs or {}))
 
             @wraps(fn)
-            def _wrapper(*args: Any, **kwargs: Any) -> Any:
+            def wrapper(slack: SlackClient, event: Dict[str, Any],
+                        **kwargs: Any) -> Any:
                 # We don't actually do anything with the return value, but this
                 # might make unit testing easier for users.
-                return fn(*args, **kwargs)
-            return _wrapper
-        return _decorator
+                return fn(slack, event, **kwargs)
+            return wrapper
+        return decorator
 
     def connect(self, token: str = None) -> bool:
         """
