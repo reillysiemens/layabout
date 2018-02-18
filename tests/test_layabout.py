@@ -150,7 +150,7 @@ def test_layabout_raises_failed_connection_without_token(monkeypatch):
         # until will exit early here just to be safe.
         layabout.run(until=lambda e: False)
 
-    assert str(exc.value) == 'Cannot connect to the Slack API without a token.'
+    assert str(exc.value) == 'Cannot connect to the Slack API without a token'
 
 
 def test_layabout_raises_failed_connection_on_failed_connection(monkeypatch):

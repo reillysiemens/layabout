@@ -47,10 +47,10 @@ class Layabout:
     Args:
         name: A unique name for this :obj:`Layabout` instance.
         env_var: The environment variable to try to load a Slack API token
-            from. Defaults to ``SLACK_API_TOKEN``.
+            from.
 
     Attributes:
-        name: A unique name for this :obj:`Layabout` instance.
+        name (str): A unique name for this :obj:`Layabout` instance.
         slack (SlackClient): A :obj:`slackclient.SlackClient` instance.
             Initially :obj:`None`, the attribute is set after calling the
             :obj:`Layabout.connect` or :obj:`Layabout.run`
@@ -104,7 +104,7 @@ class Layabout:
 
         Raises:
             TypeError: If the decorated :obj:`Callable`'s signature does not
-                permit at least 2 parameters.
+                accept at least 2 parameters.
         """
         def decorator(fn: Callable) -> Callable:
             # Validate that the wrapped callable is a suitable event handler.
@@ -143,7 +143,7 @@ class Layabout:
                 an environment variable will be used.
 
         Returns:
-            bool: Whether the connection succeeded.
+            Whether the connection succeeded.
 
         Raises:
             MissingSlackToken: If no API token is available.
@@ -163,7 +163,7 @@ class Layabout:
                 self._token = os.environ[self._env_var]
             except KeyError:
                 raise MissingSlackToken('Cannot connect to the Slack API'
-                                        ' without a token.')
+                                        ' without a token')
 
         # Either we've never connected before or we're purposefully resetting
         # the connection.
@@ -181,14 +181,14 @@ class Layabout:
         Attempt to reconnect to the Slack API.
 
         Args:
-            retries (int): The number of retry attempts to make if a connection
+            retries: The number of retry attempts to make if a connection
                 to Slack if not established or is lost.
-            backoff (Callable): The strategy used to determine how
+            backoff: The strategy used to determine how
                 long to wait between retries. Must take as input the number of
                 the current retry and output a :obj:`float`.
 
         Returns:
-            bool: Whether the reconnection succeeded.
+            Whether the reconnection succeeded.
         """
         # TODO: Should retries start at 0 or 1?
         for retry in range(retries):
@@ -209,8 +209,7 @@ class Layabout:
 
         Args:
             token: A Slack API token. If absent an attempt will be made to use
-                the environment variable supplied at instantiation. Defaults
-                to ``None``.
+                the environment variable supplied at instantiation.
             interval: The number of seconds to wait between fetching events
                 from the Slack API.
             retries: The number of retry attempts to make if a connection to
@@ -237,7 +236,7 @@ class Layabout:
                 raise FailedConnection('Failed to connect to the Slack API')
 
         # TODO: Should we force callers to handle KeyboardInterrupt on their
-        # own, or should we try to handler it for them? 🤔
+        # own, or should we try to handle it for them? 🤔
         while True:
             try:
                 # Fetch new RTM events from the API.
@@ -279,8 +278,10 @@ class Layabout:
 
 
 def _forever(events: List[dict]) -> bool:  # pragma: no cover
+    """ Run Layabout in an infinite loop. """
     return True
 
 
 def _exponential(retry: int) -> float:
+    """ An exponential backoff strategy for reconnecting to the Slack API. """
     return (2 ** retry) / 8
