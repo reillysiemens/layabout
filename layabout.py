@@ -70,14 +70,13 @@ class Layabout:
 
            layabout.run()
     """
-    def __init__(self, env_var: str = 'SLACK_API_TOKEN') -> None:
-        # TODO: Consider keyword only arguments.
+    def __init__(self, *, env_var: str = 'SLACK_API_TOKEN') -> None:
         self._env_var = env_var
         self._token: str = None
         self._slack: SlackClient = None
         self._handlers: _Handlers = defaultdict(list)
 
-    def handle(self, type: str, kwargs: dict = None) -> Callable:
+    def handle(self, type: str, *, kwargs: dict = None) -> Callable:
         """
         Register an event handler with the :obj:`Layabout` instance.
 
@@ -184,7 +183,7 @@ class Layabout:
 
         return False
 
-    def run(self, token: str = None, interval: float = 0.5,
+    def run(self, *, token: str = None, interval: float = 0.5,
             retries: int = 4, backoff: Callable[[int], float] = None,
             until: Callable[[List[dict]], bool] = None) -> None:
         """
