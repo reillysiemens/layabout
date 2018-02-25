@@ -270,8 +270,7 @@ class Layabout:
             # Handle events!
             for event in events:
                 type_ = event.get('type')
-                # TODO: Should * handlers be run first?
-                for handler in self._handlers['*'] + self._handlers[type_]:
+                for handler in self._handlers[type_] + self._handlers['*']:
                     fn, kwargs = handler
                     fn(self._slack, event, **kwargs)
 
