@@ -23,57 +23,103 @@ def slack_client():
     slack_client = MagicMock(api_call=api_call)
     return slack_client
 
+# ---- Handler registration tests ---------------------------------------------
 
-def test_layabout_can_register_handlers():
+
+def test_layabout_can_register_handler():
     """
-    Test that layabout can register Slack API event handlers normally and as a
-    decorator, both with and without keyword arguments.
+    Test that layabout can register Slack API event handlers normally.
+    """
+    layabout = Layabout()
+
+    def handle_hello(slack, event):
+        pass
+
+    layabout.handle(type='hello')(fn=handle_hello)
+
+    assert len(layabout._handlers) == 1
+
+
+def test_layabout_can_register_handler_via_decorator():
+    """
+    Test that layabout can register Slack API event handlers via decorator.
+    """
+    layabout = Layabout()
+
+    @layabout.handle('hello')
+    def handle_hello(slack, event):
+        pass
+
+    assert len(layabout._handlers) == 1
+
+
+def test_layabout_can_register_handler_with_kwargs():
+    """
+    Test that layabout can register Slack API event handlers with keyword
+    arguments normally.
     """
     layabout = Layabout()
     kwargs = dict(spam='🍳')
 
-    def handle_hello1(slack, event):
+    def handle_hello(slack, event):
         pass
 
-    @layabout.handle('hello')
-    def handle_hello2(slack, event):
-        pass
+    layabout.handle(type='hello', kwargs=kwargs)(fn=handle_hello)
 
-    def handle_hello3(slack, event, spam):
-        pass
+    assert len(layabout._handlers) == 1
+
+
+def test_layabout_can_register_handler_with_kwargs_via_decorator():
+    """
+    Test that layabout can register Slack API event handlers with keyword
+    arguments via decorator.
+    """
+    layabout = Layabout()
+    kwargs = dict(spam='🍳')
 
     @layabout.handle('hello', kwargs=kwargs)
-    def handle_hello4(slack, event, spam):
+    def handle_hello(slack, event, spam):
         pass
 
-    layabout.handle(type='hello')(fn=handle_hello1)
-    layabout.handle(type='hello', kwargs=kwargs)(fn=handle_hello3)
+    assert len(layabout._handlers) == 1
 
 
-def test_layabout_raises_type_error_with_invalid_handlers():
+def test_layabout_raises_type_error_with_invalid_handler():
     """
-    Test that layabout raises a TypeError if an event handler is supplied that
-    doesn't meet the minimum criteria to be called correctly.
+    Test that layabout raises a TypeError if an event handler that doesn't meet
+    the minimum criteria to be called correctly is registered.
     """
     layabout = Layabout()
 
-    def invalid_handler1(slack):
+    def invalid_handler(slack):
         pass
 
-    with pytest.raises(TypeError) as exc1:
-        layabout.handle(type='hello')(fn=invalid_handler1)
+    with pytest.raises(TypeError) as exc:
+        layabout.handle(type='hello')(fn=invalid_handler)
 
-    with pytest.raises(TypeError) as exc2:
+    expected = ("Layabout event handlers take at least 2 positional "
+                "arguments, a slack client and an event")
+    assert str(exc.value) == expected
+
+
+def test_layabout_raises_type_error_with_invalid_decorated_handler():
+    """
+    Test that layabout raises a TypeError if an event handler that doesn't meet
+    the minimum criteria to be called correctly is registered via decorator.
+    """
+    layabout = Layabout()
+
+    with pytest.raises(TypeError) as exc:
         @layabout.handle('hello')
-        def invalid_handler2(slack):
+        def invalid_handler(slack):
             pass
 
     expected = ("Layabout event handlers take at least 2 positional "
                 "arguments, a slack client and an event")
-    assert str(exc1.value) == expected and str(exc2.value) == expected
+    assert str(exc.value) == expected
 
 
-def test_layabout_handlers_can_still_be_used_normally():
+def test_layabout_handlers_can_be_decorated_and_used_normally():
     """
     Test that layabout can decorate event handlers that can still be used as
     though they were undecorated. Most importantly, that they can still return
