@@ -1,5 +1,6 @@
 import os
 from unittest.mock import MagicMock, call
+from typing import Iterable
 
 import pytest
 
@@ -11,17 +12,30 @@ from layabout import (
 
 TOKEN = "This ain't no Slack API token."
 
+# ---- Auxiliary functions ----------------------------------------------------
 
-@pytest.fixture
-def slack_client():
-    def api_call(method):
-        return dict(
-            channels=[{'id': 'D3ADB33F1', 'name': 'general'}],
-            groups=[{'id': '1800IDGAF', 'name': 'super_secret_club'}],
-        )
+def mock_slack(connections: Iterable = None,
+               reads: Iterable = None) -> MagicMock:
+    """
+    Mock a :obj:`slackclient.SlackClient`.
 
-    slack_client = MagicMock(api_call=api_call)
-    return slack_client
+    Args:
+        connections: Side effects for the ``rtm_connect`` method.
+        reads: Side effects for the ``rtm_read`` method.
+
+    Returns:
+        tuple: A 2-tuple containing a mock :obj:`slackclient.SlackClient`
+            and an associated instance.
+    """
+    slack = MagicMock()
+
+    if connections:
+        slack.rtm_connect = MagicMock(side_effect=connections)
+
+    if reads:
+        slack.rtm_read = MagicMock(side_effect=reads)
+
+    return MagicMock(return_value=slack), slack
 
 # ---- Handler registration tests ---------------------------------------------
 
@@ -136,6 +150,8 @@ def test_layabout_handlers_can_be_decorated_and_used_normally():
     assert handle_hello(None, None) == cheese_shop
     assert handle_hello.__doc__ == ' This docstring must be preserved. '
 
+# ---- Connection tests -------------------------------------------------------
+
 
 def test_layabout_can_connect_to_slack_with_token(monkeypatch):
     """
@@ -143,10 +159,8 @@ def test_layabout_can_connect_to_slack_with_token(monkeypatch):
     API token.
     """
     layabout = Layabout()
+    SlackClient, slack = mock_slack(connections=(True,))
 
-    rtm_connect = MagicMock(return_value=True)
-    slack = MagicMock(rtm_connect=rtm_connect)
-    SlackClient = MagicMock(return_value=slack)
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
     layabout.run(token=TOKEN, until=lambda e: False)
@@ -154,7 +168,7 @@ def test_layabout_can_connect_to_slack_with_token(monkeypatch):
     # Verify we instantiated a SlackClient with the given token and used it to
     # connect to the Slack API.
     SlackClient.assert_called_with(token=TOKEN)
-    rtm_connect.assert_called_with()
+    slack.rtm_connect.assert_called_with()
 
 
 def test_layabout_can_connect_to_slack_with_env_var(monkeypatch):
@@ -165,10 +179,8 @@ def test_layabout_can_connect_to_slack_with_env_var(monkeypatch):
     env_var = '_TEST_SLACK_API_TOKEN'
     environ = {env_var: TOKEN}
     layabout = Layabout(env_var=env_var)
+    SlackClient, slack = mock_slack(connections=(True,))
 
-    rtm_connect = MagicMock(return_value=True)
-    slack = MagicMock(rtm_connect=rtm_connect)
-    SlackClient = MagicMock(return_value=slack)
     monkeypatch.setattr(os, 'environ', environ)
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
@@ -178,7 +190,7 @@ def test_layabout_can_connect_to_slack_with_env_var(monkeypatch):
     # Verify we instantiated a SlackClient with the given token and used it to
     # connect to the Slack API.
     SlackClient.assert_called_with(token=TOKEN)
-    rtm_connect.assert_called_with()
+    slack.rtm_connect.assert_called_with()
 
 
 def test_layabout_raises_failed_connection_without_token(monkeypatch):
@@ -204,15 +216,12 @@ def test_layabout_raises_failed_connection_on_failed_connection(monkeypatch):
     API fails.
     """
     layabout = Layabout()
-
     connections = [
         False,  # Fail the initial connection (_connect).
         False,  # Fail the reconnection attempt (_reconnect).
     ]
+    SlackClient, _ = mock_slack(connections=connections)
 
-    rtm_connect = MagicMock(side_effect=connections)
-    slack = MagicMock(rtm_connect=rtm_connect)
-    SlackClient = MagicMock(return_value=slack)
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
     # Retry once after failure. until will exit early just to be safe.
@@ -233,17 +242,12 @@ def test_layabout_raises_connection_error_on_failed_reconnection(monkeypatch):
     the Slack API fail.
     """
     layabout = Layabout()
-
     connections = [
         True,  # Succeed with the first connection (_connect).
         False,  # Fail later during a reconnection (_reconnect).
     ]
+    SlackClient, _ = mock_slack(connections=connections, reads=TimeoutError)
 
-    rtm_connect = MagicMock(side_effect=connections)
-    rtm_read = MagicMock(side_effect=TimeoutError)
-    slack = MagicMock(rtm_connect=rtm_connect, rtm_read=rtm_read)
-
-    SlackClient = MagicMock(return_value=slack)
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
     # Retry once after failure. until will exit early just to be safe. Don't
@@ -265,16 +269,13 @@ def test_layabout_can_reuse_an_existing_client_to_reconnect(monkeypatch):
     reconnection attempt.
     """
     layabout = Layabout()
-
     connections = [
         False,  # Fail the initial connection (_connect).
         False,  # Fail with the first reconnection attempt (_reconnect).
         True,  # Succeed with the second reconnection attempt (_reconnect).
     ]
+    SlackClient, _ = mock_slack(connections=connections)
 
-    rtm_connect = MagicMock(side_effect=connections)
-    slack = MagicMock(rtm_connect=rtm_connect)
-    SlackClient = MagicMock(return_value=slack)
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
     # Retry connecting twice to verify reconnection logic was evaluated.
@@ -297,7 +298,6 @@ def test_layabout_can_continue_after_successful_reconnection(monkeypatch):
     reconnecting to the Slack API.
     """
     layabout = Layabout()
-
     connections = [
         True,  # Succeed with the first connection (_connect).
         True,  # Succeed later with a reconnection (_reconnect).
@@ -306,12 +306,8 @@ def test_layabout_can_continue_after_successful_reconnection(monkeypatch):
         TimeoutError,  # Raise an exception on the first read.
         [],  # Return empty events on the second read (after reconnection).
     ]
+    SlackClient, _ = mock_slack(connections=connections, reads=reads)
 
-    rtm_connect = MagicMock(side_effect=connections)
-    rtm_read = MagicMock(side_effect=reads)
-    slack = MagicMock(rtm_connect=rtm_connect, rtm_read=rtm_read)
-
-    SlackClient = MagicMock(return_value=slack)
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
     layabout.run(
@@ -327,22 +323,11 @@ def test_layabout_can_handle_events(monkeypatch):
     Test that layabout can handle events appropriately given multiple event
     handlers and even * event handlers.
     """
-    events = [
-        dict(type='hello'),
-        dict(type='goodbye'),
-    ]
     layabout = Layabout()
+    events = [dict(type='hello'), dict(type='goodbye')]
+    run_twice = MagicMock(side_effect=(True, False))
+    SlackClient, _ = mock_slack(connections=(True,), reads=(events, []))
 
-    connections = [
-        True,  # Succeed with the first connection (_connect).
-    ]
-
-    rtm_connect = MagicMock(side_effect=connections)
-    rtm_read = MagicMock(return_value=events)
-    slack = MagicMock(rtm_connect=rtm_connect, rtm_read=rtm_read)
-    run_twice = MagicMock(side_effect=[True, False])
-
-    SlackClient = MagicMock(return_value=slack)
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
     # Register our handlers to be called with the specified kwargs.
