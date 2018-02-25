@@ -241,8 +241,6 @@ class Layabout:
                 or self._reconnect(retries=retries, backoff=backoff)):
             raise FailedConnection('Failed to connect to the Slack API')
 
-        # TODO: Should we force callers to handle KeyboardInterrupt on their
-        # own, or should we try to handle it for them? 🤔
         while True:
             try:
                 # Fetch new RTM events from the API.
