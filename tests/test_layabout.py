@@ -118,14 +118,14 @@ def test_layabout_raises_type_error_with_invalid_handler():
     """
     layabout = Layabout()
 
-    def invalid_handler(slack):
+    def invalid_handler():
         pass
 
     with pytest.raises(TypeError) as exc:
         layabout.handle(type='hello')(fn=invalid_handler)
 
-    expected = ("Layabout event handlers take at least 2 positional "
-                "arguments, a slack client and an event")
+    expected = ("invalid_handler() missing 2 required positional arguments: "
+                "'slack' and 'event'")
     assert str(exc.value) == expected
 
 
@@ -141,8 +141,8 @@ def test_layabout_raises_type_error_with_invalid_decorated_handler():
         def invalid_handler(slack):
             pass
 
-    expected = ("Layabout event handlers take at least 2 positional "
-                "arguments, a slack client and an event")
+    expected = ("invalid_handler(slack) missing 1 required positional "
+                "argument: 'event'")
     assert str(exc.value) == expected
 
 

@@ -2,7 +2,7 @@ import os
 import time
 import logging
 from typing import Any, DefaultDict, Dict, Callable, List, Tuple
-from inspect import signature
+from inspect import signature, Signature
 from functools import wraps
 from collections import defaultdict
 
@@ -76,6 +76,32 @@ class Layabout:
         self._slack: SlackClient = None
         self._handlers: _Handlers = defaultdict(list)
 
+    @staticmethod
+    def _format_parameter_error_message(name: str, sig: Signature,
+                                        num_params: int) -> str:
+        """
+        Format an error message for missing positional arguments.
+
+        Args:
+            name: The function name.
+            sig: The function's signature.
+            num_params: The number of function parameters.
+
+        Returns:
+            str: A formatted error message.
+        """
+        if num_params == 0:
+            plural = 's'
+            missing = 2
+            arguments = "'slack' and 'event'"
+        else:
+            plural = ''
+            missing = 1
+            arguments = "'event'"
+
+        return (f"{name}{sig} missing {missing} required positional "
+                f"argument{plural}: {arguments}")
+
     def handle(self, type: str, *, kwargs: dict = None) -> Callable:
         """
         Register an event handler with the :obj:`Layabout` instance.
@@ -99,10 +125,10 @@ class Layabout:
         def decorator(fn: Callable) -> Callable:
             # Validate that the wrapped callable is a suitable event handler.
             sig = signature(fn)
-            if len(sig.parameters) < 2:
-                raise TypeError("Layabout event handlers take at least 2 "
-                                "positional arguments, a slack client and an "
-                                "event")
+            num_params = len(sig.parameters)
+            if num_params < 2:
+                raise TypeError(self._format_parameter_error_message(
+                    fn.__name__, sig, num_params))
 
             # Register a tuple of the callable and its kwargs, if any.
             self._handlers[type].append((fn, kwargs or {}))
