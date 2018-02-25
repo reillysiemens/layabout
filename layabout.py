@@ -211,11 +211,9 @@ class Layabout:
         backoff = backoff or _exponential
         until = until or _forever
 
-        # The initial connection may use a given token or attempt to use an
-        # environment variable.
-        if not self._connect(token=token):
-            if not self._reconnect(retries=retries, backoff=backoff):
-                raise FailedConnection('Failed to connect to the Slack API')
+        if not (self._connect(token=token)
+                or self._reconnect(retries=retries, backoff=backoff)):
+            raise FailedConnection('Failed to connect to the Slack API')
 
         # TODO: Should we force callers to handle KeyboardInterrupt on their
         # own, or should we try to handle it for them? 🤔
