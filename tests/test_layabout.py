@@ -9,8 +9,7 @@ from layabout import (
     FailedConnection,
 )
 
-# The likelihood of this ever being a valid Slack token is probably slim.
-TOKEN = 'xoxb-13376661337-DeAdb33Fd15EA53fACef33D1'
+TOKEN = "This ain't no Slack API token."
 
 
 @pytest.fixture
