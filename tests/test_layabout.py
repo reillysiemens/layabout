@@ -14,6 +14,7 @@ TOKEN = "This ain't no Slack API token."
 
 # ---- Auxiliary functions ----------------------------------------------------
 
+
 def mock_slack(connections: Iterable = None,
                reads: Iterable = None) -> MagicMock:
     """
@@ -36,6 +37,18 @@ def mock_slack(connections: Iterable = None,
         slack.rtm_read = MagicMock(side_effect=reads)
 
     return MagicMock(return_value=slack), slack
+
+# ---- Fixtures ---------------------------------------------------------------
+
+
+@pytest.fixture(scope='function')
+def run_once():
+    return MagicMock(side_effect=(True, False))
+
+
+@pytest.fixture(scope='module')
+def events():
+    return [dict(type='hello'), dict(type='goodbye')]
 
 # ---- Handler registration tests ---------------------------------------------
 
@@ -306,41 +319,198 @@ def test_layabout_can_continue_after_successful_reconnection(monkeypatch):
         until=lambda e: False
     )
 
+# ---- Event loop tests -------------------------------------------------------
 
-def test_layabout_can_handle_events(monkeypatch):
+
+def test_layabout_can_handle_an_event(events, run_once, monkeypatch):
     """
-    Test that layabout can handle events appropriately given multiple event
-    handlers and even * event handlers.
+    Test that layabout can handle an event.
     """
     layabout = Layabout()
-    events = [dict(type='hello'), dict(type='goodbye')]
-    run_twice = MagicMock(side_effect=(True, False))
-    SlackClient, _ = mock_slack(connections=(True,), reads=(events, []))
+    SlackClient, slack = mock_slack(connections=(True,), reads=(events, []))
+    handle_hello = MagicMock()
 
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
-    # Register our handlers to be called with the specified kwargs.
-    kwargs = dict(caerbannog='🐰')
-    handle_hello = MagicMock()
-    handle_goodbye = MagicMock()
-    handle_splat = MagicMock()
-    layabout.handle(type='hello', kwargs=kwargs)(fn=handle_hello)
-    layabout.handle(type='goodbye', kwargs=kwargs)(fn=handle_goodbye)
-    layabout.handle(type='*', kwargs=kwargs)(fn=handle_splat)
-
+    layabout.handle('hello')(handle_hello)
     layabout.run(
         token=TOKEN,
         interval=0,
         retries=0,
         backoff=lambda r: 0,
-        until=run_twice
+        until=run_once
     )
 
-    # Ensure the hello handler receives only hello events, the goodbye handler
-    # receives only goodbye events, and the * handler receives all events.
-    call_hello = call(layabout._slack, events[0], **kwargs)
-    call_goodbye = call(layabout._slack, events[1], **kwargs)
-    all_calls = [call_hello, call_goodbye]
-    handle_hello.assert_called_once_with(*call_hello[1], **call_hello[2])
-    handle_goodbye.assert_called_once_with(*call_goodbye[1], **call_goodbye[2])
-    handle_splat.assert_has_calls(all_calls)
+    handle_hello.assert_called_once_with(slack, events[0])
+
+
+def test_layabout_can_handle_an_event_with_kwargs(events, run_once,
+                                                  monkeypatch):
+    """
+    Test that layabout can call an event handler that requires kwargs.
+    """
+    layabout = Layabout()
+    SlackClient, slack = mock_slack(connections=(True,), reads=(events, []))
+    kwargs = dict(caerbannog='🐰')
+    handle_hello = MagicMock()
+
+    monkeypatch.setattr('layabout.SlackClient', SlackClient)
+
+    layabout.handle('hello', kwargs=kwargs)(handle_hello)
+    layabout.run(
+        token=TOKEN,
+        interval=0,
+        retries=0,
+        backoff=lambda r: 0,
+        until=run_once
+    )
+
+    handle_hello.assert_called_once_with(slack, events[0], **kwargs)
+
+
+def test_layabout_can_only_handle_events_that_happen(events, run_once,
+                                                     monkeypatch):
+    """
+    Test that layabout only handles events that actually happen.
+    """
+    layabout = Layabout()
+    SlackClient, _ = mock_slack(connections=(True,), reads=(events, []))
+    aint_happenin = MagicMock()
+
+    monkeypatch.setattr('layabout.SlackClient', SlackClient)
+
+    layabout.handle('this will never happen')(aint_happenin)
+    layabout.run(
+        token=TOKEN,
+        interval=0,
+        retries=0,
+        backoff=lambda r: 0,
+        until=run_once
+    )
+
+    aint_happenin.assert_not_called()
+
+
+def test_layabout_can_handle_one_event_multiple_times(events, run_once,
+                                                      monkeypatch):
+    """
+    Test that layabout calls all handlers for a given event.
+    """
+    layabout = Layabout()
+    SlackClient, slack = mock_slack(connections=(True,), reads=(events, []))
+    handle_hello1, handle_hello2 = MagicMock(), MagicMock()
+
+    monkeypatch.setattr('layabout.SlackClient', SlackClient)
+
+    layabout.handle('hello')(handle_hello1)
+    layabout.handle('hello')(handle_hello2)
+    layabout.run(
+        token=TOKEN,
+        interval=0,
+        retries=0,
+        backoff=lambda r: 0,
+        until=run_once
+    )
+
+    handle_hello1.assert_called_once_with(slack, events[0])
+    handle_hello2.assert_called_once_with(slack, events[0])
+
+
+def test_layabout_can_handle_multiple_events(events, run_once, monkeypatch):
+    """
+    Test that layabout calls all handlers for their respective events.
+    """
+    layabout = Layabout()
+    SlackClient, slack = mock_slack(connections=(True,), reads=(events, []))
+    handle_hello, handle_goodbye = MagicMock(), MagicMock()
+
+    monkeypatch.setattr('layabout.SlackClient', SlackClient)
+
+    layabout.handle('hello')(handle_hello)
+    layabout.handle('goodbye')(handle_goodbye)
+    layabout.run(
+        token=TOKEN,
+        interval=0,
+        retries=0,
+        backoff=lambda r: 0,
+        until=run_once
+    )
+
+    handle_hello.assert_called_once_with(slack, events[0])
+    handle_goodbye.assert_called_once_with(slack, events[1])
+
+
+def test_layabout_can_handle_an_event_with_a_splat_handler(events, run_once,
+                                                           monkeypatch):
+    """
+    Test that layabout can handle any event with a splat handler.
+    """
+    layabout = Layabout()
+    events = events[:1]
+    SlackClient, slack = mock_slack(connections=(True,), reads=(events, []))
+    splat = MagicMock()
+
+    monkeypatch.setattr('layabout.SlackClient', SlackClient)
+
+    layabout.handle('*')(splat)
+    layabout.run(
+        token=TOKEN,
+        interval=0,
+        retries=0,
+        backoff=lambda r: 0,
+        until=run_once
+    )
+
+    splat.assert_called_once_with(slack, events[0])
+
+
+def test_layabout_can_handle_all_events_with_a_splat_handler(events, run_once,
+                                                             monkeypatch):
+    """
+    Test that layabout can handle all events with a splat handler.
+    """
+    layabout = Layabout()
+    SlackClient, slack = mock_slack(connections=(True,), reads=(events, []))
+    splat = MagicMock()
+
+    monkeypatch.setattr('layabout.SlackClient', SlackClient)
+
+    layabout.handle('*')(splat)
+    layabout.run(
+        token=TOKEN,
+        interval=0,
+        retries=0,
+        backoff=lambda r: 0,
+        until=run_once
+    )
+
+    splat.assert_has_calls([call(slack, e) for e in events])
+
+
+def test_layabout_can_handle_events_with_normal_and_splat_handlers(
+    events,
+    run_once,
+    monkeypatch
+):
+    """
+    Test that layabout can handle an event with normal handlers as well as
+    a splat handler.
+    """
+    layabout = Layabout()
+    SlackClient, slack = mock_slack(connections=(True,), reads=(events, []))
+    handle_hello, splat = MagicMock(), MagicMock()
+
+    monkeypatch.setattr('layabout.SlackClient', SlackClient)
+
+    layabout.handle('hello')(handle_hello)
+    layabout.handle('*')(splat)
+    layabout.run(
+        token=TOKEN,
+        interval=0,
+        retries=0,
+        backoff=lambda r: 0,
+        until=run_once
+    )
+
+    handle_hello.assert_called_once_with(slack, events[0])
+    splat.assert_has_calls([call(slack, e) for e in events])
