@@ -198,7 +198,7 @@ def test_layabout_can_connect_to_slack_with_env_var(monkeypatch):
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
     # Purposefully don't provide a token so we have to use an env var.
-    layabout.run(until=lambda e: False)
+    layabout.run(token=None, until=lambda e: False)
 
     # Verify we instantiated a SlackClient with the given token and used it to
     # connect to the Slack API.
