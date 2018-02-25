@@ -51,8 +51,7 @@ class Layabout:
     Attributes:
         slack (SlackClient): A :obj:`slackclient.SlackClient` instance.
             Initially :obj:`None`, the attribute is set after calling the
-            :obj:`Layabout.connect` or :obj:`Layabout.run`
-            methods.
+            :obj:`Layabout.run` method.
 
     Example:
 
@@ -123,16 +122,9 @@ class Layabout:
             return wrapper
         return decorator
 
-    def connect(self, token: str = None) -> bool:
+    def _connect(self, token: str = None) -> bool:
         """
         Attempt to establish or reset a connection to Slack's API.
-
-        Note:
-            It isn't normally necessary to use this method as
-            :obj:`Layabout.run` will take care of establishing a connection for
-            you. This is mostly helpful if you want to take advantage of the
-            embedded :obj:`slackclient.SlackClient` on the :obj:`Layabout`
-            instance *before* entering into the :obj:`Layabout.run` loop.
 
         Args:
             token: A Slack API token. If given it will override an existing
@@ -187,7 +179,7 @@ class Layabout:
         """
         # TODO: Should retries start at 0 or 1?
         for retry in range(retries):
-            if self.connect():
+            if self._connect():
                 return True
             else:
                 interval = backoff(retry)
@@ -226,7 +218,7 @@ class Layabout:
 
         # The initial connection may use a given token or attempt to use an
         # environment variable.
-        if not self.connect(token=token):
+        if not self._connect(token=token):
             if not self._reconnect(retries=retries, backoff=backoff):
                 raise FailedConnection('Failed to connect to the Slack API')
 
