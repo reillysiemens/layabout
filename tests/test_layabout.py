@@ -216,10 +216,8 @@ def test_layabout_raises_failed_connection_on_failed_connection(monkeypatch):
     API fails.
     """
     layabout = Layabout()
-    connections = [
-        False,  # Fail the initial connection (_connect).
-        False,  # Fail the reconnection attempt (_reconnect).
-    ]
+    # Fail the first connection and the subsequent reconnection.
+    connections = (False, False)
     SlackClient, _ = mock_slack(connections=connections)
 
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
@@ -242,10 +240,8 @@ def test_layabout_raises_connection_error_on_failed_reconnection(monkeypatch):
     the Slack API fail.
     """
     layabout = Layabout()
-    connections = [
-        True,  # Succeed with the first connection (_connect).
-        False,  # Fail later during a reconnection (_reconnect).
-    ]
+    # Succeed with the first connection and fail the subsequent reconnection.
+    connections = (True, False)
     SlackClient, _ = mock_slack(connections=connections, reads=TimeoutError)
 
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
@@ -269,11 +265,8 @@ def test_layabout_can_reuse_an_existing_client_to_reconnect(monkeypatch):
     reconnection attempt.
     """
     layabout = Layabout()
-    connections = [
-        False,  # Fail the initial connection (_connect).
-        False,  # Fail with the first reconnection attempt (_reconnect).
-        True,  # Succeed with the second reconnection attempt (_reconnect).
-    ]
+    # Fail initial connection, fail reconnection, succeed at last.
+    connections = (False, False, True)
     SlackClient, _ = mock_slack(connections=connections)
 
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
@@ -298,14 +291,10 @@ def test_layabout_can_continue_after_successful_reconnection(monkeypatch):
     reconnecting to the Slack API.
     """
     layabout = Layabout()
-    connections = [
-        True,  # Succeed with the first connection (_connect).
-        True,  # Succeed later with a reconnection (_reconnect).
-    ]
-    reads = [
-        TimeoutError,  # Raise an exception on the first read.
-        [],  # Return empty events on the second read (after reconnection).
-    ]
+    # Succeed with the first connection and the subsequent reconnection.
+    connections = (True, True)
+    # Raise an exception on the first read and return empty events next.
+    reads = (TimeoutError, [])
     SlackClient, _ = mock_slack(connections=connections, reads=reads)
 
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
