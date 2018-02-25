@@ -30,7 +30,7 @@ def test_layabout_can_register_handlers():
     Test that layabout can register Slack API event handlers normally and as a
     decorator, both with and without keyword arguments.
     """
-    layabout = Layabout(name='test')
+    layabout = Layabout()
     kwargs = dict(spam='🍳')
 
     def handle_hello1(slack, event):
@@ -56,7 +56,7 @@ def test_layabout_raises_type_error_with_invalid_handlers():
     Test that layabout raises a TypeError if an event handler is supplied that
     doesn't meet the minimum criteria to be called correctly.
     """
-    layabout = Layabout(name='test')
+    layabout = Layabout()
 
     def invalid_handler1(slack):
         pass
@@ -80,7 +80,7 @@ def test_layabout_handlers_can_still_be_used_normally():
     though they were undecorated. Most importantly, that they can still return
     and that their docstrings are intact.
     """
-    layabout = Layabout(name='test')
+    layabout = Layabout()
     cheese_shop = dict(shop='🧀')
 
     @layabout.handle('hello')
@@ -97,7 +97,7 @@ def test_layabout_can_connect_to_slack_with_token(monkeypatch):
     Test that layabout can connect to the Slack API when given a valid Slack
     API token.
     """
-    layabout = Layabout(name='test')
+    layabout = Layabout()
 
     rtm_connect = MagicMock(return_value=True)
     slack = MagicMock(rtm_connect=rtm_connect)
@@ -119,7 +119,7 @@ def test_layabout_can_connect_to_slack_with_env_var(monkeypatch):
     """
     env_var = '_TEST_SLACK_API_TOKEN'
     environ = {env_var: TOKEN}
-    layabout = Layabout(name='test', env_var=env_var)
+    layabout = Layabout(env_var=env_var)
 
     rtm_connect = MagicMock(return_value=True)
     slack = MagicMock(rtm_connect=rtm_connect)
@@ -142,7 +142,7 @@ def test_layabout_raises_failed_connection_without_token(monkeypatch):
     for it to use.
     """
     environ = dict()
-    layabout = Layabout(name='test')
+    layabout = Layabout()
 
     monkeypatch.setattr(os, 'environ', environ)
 
@@ -158,7 +158,7 @@ def test_layabout_raises_failed_connection_on_failed_connection(monkeypatch):
     Test that layabout raises a FailedConnection if the connection to the Slack
     API fails.
     """
-    layabout = Layabout(name='test')
+    layabout = Layabout()
 
     connections = [
         False,  # Fail the initial connection (_connect).
@@ -187,7 +187,7 @@ def test_layabout_raises_connection_error_on_failed_reconnection(monkeypatch):
     Test that layabout raises a FailedConnection if attempts to reconnect to
     the Slack API fail.
     """
-    layabout = Layabout(name='test')
+    layabout = Layabout()
 
     connections = [
         True,  # Succeed with the first connection (_connect).
@@ -219,7 +219,7 @@ def test_layabout_can_reuse_an_existing_client_to_reconnect(monkeypatch):
     to the Slack API rather than needlessly instantiating a new one on each
     reconnection attempt.
     """
-    layabout = Layabout(name='test')
+    layabout = Layabout()
 
     connections = [
         False,  # Fail the initial connection (_connect).
@@ -251,7 +251,7 @@ def test_layabout_can_continue_after_successful_reconnection(monkeypatch):
     Test that layabout can continue to handle events after successfully
     reconnecting to the Slack API.
     """
-    layabout = Layabout(name='test')
+    layabout = Layabout()
 
     connections = [
         True,  # Succeed with the first connection (_connect).
@@ -286,7 +286,7 @@ def test_layabout_can_handle_events(monkeypatch):
         dict(type='hello'),
         dict(type='goodbye'),
     ]
-    layabout = Layabout(name='test')
+    layabout = Layabout()
 
     connections = [
         True,  # Succeed with the first connection (_connect).

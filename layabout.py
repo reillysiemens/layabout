@@ -45,12 +45,10 @@ class Layabout:
     An event handler on top of the Slack RTM API.
 
     Args:
-        name: A unique name for this :obj:`Layabout` instance.
         env_var: The environment variable to try to load a Slack API token
             from.
 
     Attributes:
-        name (str): A unique name for this :obj:`Layabout` instance.
         slack (SlackClient): A :obj:`slackclient.SlackClient` instance.
             Initially :obj:`None`, the attribute is set after calling the
             :obj:`Layabout.connect` or :obj:`Layabout.run`
@@ -62,7 +60,7 @@ class Layabout:
 
            from layabout import Layabout
 
-           layabout = Layabout('app')
+           layabout = Layabout()
 
 
            @layabout.handle('message')
@@ -78,9 +76,8 @@ class Layabout:
 
            layabout.run()
     """
-    def __init__(self, name: str, env_var: str = 'SLACK_API_TOKEN') -> None:
+    def __init__(self, env_var: str = 'SLACK_API_TOKEN') -> None:
         # TODO: Consider keyword only arguments.
-        self.name = name
         self._env_var = env_var
         self._token: str = None
         self.slack: SlackClient = None
@@ -168,8 +165,6 @@ class Layabout:
         # Either we've never connected before or we're purposefully resetting
         # the connection.
         if self.slack is None or resetting:
-            # TODO: Maybe set an appropriate user agent string here using
-            # self.name.
             self.slack = SlackClient(token=self._token)
 
         # Use whatever token we've got to attempt to connect (or reconnect).
