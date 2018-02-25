@@ -197,8 +197,7 @@ class Layabout:
         Returns:
             Whether the reconnection succeeded.
         """
-        # TODO: Should retries start at 0 or 1?
-        for retry in range(retries):
+        for retry in range(1, retries + 1):
             if self._connect():
                 log.debug('Reconnected to the Slack API')
                 return True
