@@ -175,6 +175,7 @@ class Layabout:
         # TODO: Should retries start at 0 or 1?
         for retry in range(retries):
             if self._connect():
+                log.debug('Reconnected to the Slack API')
                 return True
             else:
                 interval = backoff(retry)
@@ -232,10 +233,8 @@ class Layabout:
             except (WebSocketConnectionClosedException, TimeoutError):
                 log.debug('Lost connection to the Slack API, attempting to '
                           'reconnect')
-                # Attempt to re-use our existing SlackClient and token.
+                # Attempt to reconnect with our existing SlackClient and token.
                 if self._reconnect(retries=retries, backoff=backoff):
-                    log.debug('Reconnected to the Slack API')
-                    # We continue so we can fetch new events before proceeding.
                     continue
 
                 raise FailedConnection('Failed to reconnect to the Slack API')
