@@ -1,5 +1,6 @@
 import os
 import time
+import random
 import logging
 from typing import Any, DefaultDict, Dict, Callable, List, Tuple
 from inspect import signature, Signature
@@ -209,7 +210,7 @@ class Layabout:
         return False
 
     def run(self, *, token: str = None, interval: float = 0.5,
-            retries: int = 4, backoff: Callable[[int], float] = None,
+            retries: int = 16, backoff: Callable[[int], float] = None,
             until: Callable[[List[dict]], bool] = None) -> None:
         """
         Connect to the Slack API and run the event handler loop.
@@ -223,17 +224,20 @@ class Layabout:
                 Slack if not established or is lost.
             backoff: The strategy used to determine how long to wait between
                 retries. Must take as input the number of the current retry and
-                output a :obj:`float`. If absent an exponential backoff
-                strategy will be used.
+                output a :obj:`float`. If absent a `truncated exponential
+                backoff`_ strategy will be used.
             until: The condition used to evaluate whether this method
-                terminates. Must take as input an :obj:`list` of :obj:`dict`
+                terminates. Must take as input a :obj:`list` of :obj:`dict`
                 representing Slack RTM API events and return a :obj:`bool`. If
                 absent this method will run forever.
 
         Raises:
             FailedConnection: If connecting to the Slack API fails.
+
+        .. _truncated exponential backoff:
+            https://cloud.google.com/storage/docs/exponential-backoff
         """
-        backoff = backoff or _exponential
+        backoff = backoff or _truncated_exponential
         until = until or _forever
 
         if not (self._connect(token=token)
@@ -281,6 +285,6 @@ def _forever(events: List[dict]) -> bool:  # pragma: no cover
     return True
 
 
-def _exponential(retry: int) -> float:
+def _truncated_exponential(retry: int) -> float:
     """ An exponential backoff strategy for reconnecting to the Slack API. """
-    return (2 ** retry) / 8
+    return (min(((2 ** retry) + random.choice(range(1000))), 64000) / 1000)
