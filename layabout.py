@@ -48,11 +48,6 @@ class Layabout:
         env_var: The environment variable to try to load a Slack API token
             from.
 
-    Attributes:
-        slack (SlackClient): A :obj:`slackclient.SlackClient` instance.
-            Initially :obj:`None`, the attribute is set after calling the
-            :obj:`Layabout.run` method.
-
     Example:
 
         .. code-block:: python
@@ -79,7 +74,7 @@ class Layabout:
         # TODO: Consider keyword only arguments.
         self._env_var = env_var
         self._token: str = None
-        self.slack: SlackClient = None
+        self._slack: SlackClient = None
         self._handlers: _Handlers = defaultdict(list)
 
     def handle(self, type: str, kwargs: dict = None) -> Callable:
@@ -156,11 +151,11 @@ class Layabout:
 
         # Either we've never connected before or we're purposefully resetting
         # the connection.
-        if self.slack is None or resetting:
-            self.slack = SlackClient(token=self._token)
+        if self._slack is None or resetting:
+            self._slack = SlackClient(token=self._token)
 
         # Use whatever token we've got to attempt to connect (or reconnect).
-        return self.slack.rtm_connect()
+        return self._slack.rtm_connect()
 
     def _reconnect(self, retries: int,
                    backoff: Callable[[int], float]) -> bool:
@@ -227,7 +222,7 @@ class Layabout:
         while True:
             try:
                 # Fetch new RTM events from the API.
-                events = self.slack.rtm_read()
+                events = self._slack.rtm_read()
 
             # This is necessary to handle an error caused by a bug in Slack's
             # Python client. For more information see
@@ -258,7 +253,7 @@ class Layabout:
                 # TODO: Should * handlers be run first?
                 for handler in self._handlers['*'] + self._handlers[type_]:
                     fn, kwargs = handler
-                    fn(self.slack, event, **kwargs)
+                    fn(self._slack, event, **kwargs)
 
             # Maybe don't pester the Slack API too much.
             time.sleep(interval)

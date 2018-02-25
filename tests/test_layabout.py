@@ -319,8 +319,8 @@ def test_layabout_can_handle_events(monkeypatch):
 
     # Ensure the hello handler receives only hello events, the goodbye handler
     # receives only goodbye events, and the * handler receives all events.
-    call_hello = call(layabout.slack, events[0], **kwargs)
-    call_goodbye = call(layabout.slack, events[1], **kwargs)
+    call_hello = call(layabout._slack, events[0], **kwargs)
+    call_goodbye = call(layabout._slack, events[1], **kwargs)
     all_calls = [call_hello, call_goodbye]
     handle_hello.assert_called_once_with(*call_hello[1], **call_hello[2])
     handle_goodbye.assert_called_once_with(*call_goodbye[1], **call_goodbye[2])
