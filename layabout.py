@@ -263,8 +263,7 @@ class Layabout:
                 raise FailedConnection('Failed to reconnect to the Slack API')
 
             if not until(events):
-                # TODO: Is this even a good debugging message?
-                log.debug('Terminal condition met')
+                log.debug('Exiting event loop')
                 break
 
             # Handle events!
