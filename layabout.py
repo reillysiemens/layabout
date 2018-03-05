@@ -2,9 +2,9 @@ import os
 import time
 import random
 import logging
-from typing import Any, DefaultDict, Dict, Callable, List, Tuple
+from typing import Any, DefaultDict, Dict, Callable, List, Tuple, Union
 from inspect import signature, Signature
-from functools import wraps
+from functools import singledispatch, update_wrapper, wraps
 from collections import defaultdict
 
 from slackclient import SlackClient
@@ -24,6 +24,21 @@ _Handlers = DefaultDict[str, List[Tuple[Callable, dict]]]
 log = logging.getLogger(__name__)
 
 
+def _methoddispatch(fn: Callable) -> Callable:
+    """
+    Wrap single dispatch to ignore self and make it usable for methods.
+    Many thanks to Zero Piraeus from Stack Overflow.
+
+    https://stackoverflow.com/a/24602374/3288364
+    """
+    dispatcher = singledispatch(fn)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        return dispatcher.dispatch(args[1].__class__)(*args, **kwargs)
+    wrapper.register = dispatcher.register
+    update_wrapper(wrapper, fn)
+    return wrapper
+
+
 class LayaboutError(Exception):
     """ Base error for all Layabout exceptions. """
 
@@ -39,6 +54,59 @@ class FailedConnection(LayaboutError, ConnectionError):
     Inherits from both :obj:`LayaboutError` and the built-in
     :obj:`ConnectionError` for convenience in exception handling.
     """
+
+class _SlackClientWrapper:
+    def __init__(self, slack: SlackClient, retries: int,
+                 backoff: Callable[[int], float]) -> None:
+        self.inner = slack
+        self.retries = retries
+        self.backoff = backoff
+
+        # Slack Connection is Initialization (SCII)
+        self.connect_with_retry()
+
+    def connect(self) -> None:
+        """ Connect to the Slack API. """
+        self.inner.rtm_connect()
+
+    def is_connected(self) -> bool:
+        """ Validate whether we're connected to the Slack API. """
+        return getattr(self.inner.server.websocket, 'connected', False)
+
+    def connect_with_retry(self) -> None:
+        """ Attempt to connect to the Slack API. Retry on failures. """
+        if self.is_connected():
+            log.debug('Already connected to the Slack API')
+            return
+
+        for retry in range(1, self.retries + 1):
+            self.connect()
+            if self.is_connected():
+                log.debug('Connected to the Slack API')
+                return
+            else:
+                interval = self.backoff(retry)
+                log.debug("Waiting %.3fs before retrying", interval)
+                time.sleep(interval)
+
+        raise FailedConnection('Failed to connect to the Slack API')
+
+    def fetch_events(self) -> List[dict]:
+        """ Fetch new RTM events from the API. """
+        try:
+            return self.inner.rtm_read()
+
+        # This is necessary to handle an error caused by a bug in Slack's
+        # Python client. For more information see
+        # https://github.com/slackhq/python-slackclient/issues/127
+        #
+        # TODO: The TimeoutError could be more elegantly resolved by making
+        # a PR to the websocket-client library and letting them coerce that
+        # exception to a WebSocketTimeoutException.
+        except (WebSocketConnectionClosedException, TimeoutError):
+            log.debug('Lost connection to the Slack API, attempting to '
+                      'reconnect')
+            self.connect_with_retry()
 
 
 class Layabout:
@@ -73,8 +141,7 @@ class Layabout:
     """
     def __init__(self, *, env_var: str = 'SLACK_API_TOKEN') -> None:
         self._env_var = env_var
-        self._token: str = None
-        self._slack: SlackClient = None
+        self._slack: self._SlackClientWrapper = None
         self._handlers: _Handlers = defaultdict(list)
 
     @staticmethod
@@ -143,81 +210,57 @@ class Layabout:
             return wrapper
         return decorator
 
-    def _connect(self, token: str = None) -> bool:
-        """
-        Attempt to establish or reset a connection to Slack's API.
+    def _ensure_slack(self, connector: Any, retries: int,
+                      backoff: Callable[[int], float]) -> None:
+        """ Ensure we have a SlackClient. """
+        slack = self._create_slack(connector)
+        self._slack = _SlackClientWrapper(
+            slack=slack,
+            retries=retries,
+            backoff=backoff
+        )
 
-        Args:
-            token: A Slack API token. If given it will override an existing
-                connection (if one exists), otherwise an existing token or
-                an environment variable will be used.
+    @_methoddispatch
+    def _create_slack(self, connector: Any) -> None:
+        """ Default connector. Raises an error with unsupported connectors. """
+        raise TypeError(f"Invalid connector: {type(connector)}")
 
-        Returns:
-            Whether the connection succeeded.
+    @_create_slack.register(type(None))
+    def _create_slack_with_env_var(self, _: None) -> SlackClient:
+        """ Create a SlackClient with a token from an environment variable. """
+        token = os.getenv(self._env_var)
+        if not token:
+            raise MissingSlackToken("Could not acquire token from "
+                                    f"{self._env_var}")
 
-        Raises:
-            MissingSlackToken: If no API token is available.
-        """
-        resetting = False
+        return SlackClient(token=token)
 
-        # If we were given a token let's prefer the new one and establish or
-        # reset the connection.
-        if token is not None:
-            self._token = token
-            resetting = True
+    @_create_slack.register(str)
+    def _create_slack_with_token(self, token: str) -> SlackClient:
+        """ Create a SlackClient with a provided token. """
+        if token == '':
+            raise MissingSlackToken("The empty string is an invalid Slack API "
+                                    "token")
 
-        # We don't have an existing token, so let's try to get one from an
-        # environment variable or give up.
-        if self._token is None:
-            try:
-                self._token = os.environ[self._env_var]
-            except KeyError:
-                raise MissingSlackToken('Cannot connect to the Slack API'
-                                        ' without a token')
+        return SlackClient(token=token)
 
-        # Either we've never connected before or we're purposefully resetting
-        # the connection.
-        if self._slack is None or resetting:
-            self._slack = SlackClient(token=self._token)
+    @_create_slack.register(SlackClient)
+    def _create_slack_with_slack_client(self,
+                                        slack: SlackClient) -> SlackClient:
+        """ Use an existing SlackClient if we don't already have one. """
+        return slack
 
-        # Use whatever token we've got to attempt to connect (or reconnect).
-        return self._slack.rtm_connect()
-
-    def _reconnect(self, retries: int,
-                   backoff: Callable[[int], float]) -> bool:
-        """
-        Attempt to reconnect to the Slack API.
-
-        Args:
-            retries: The number of retry attempts to make if a connection
-                to Slack if not established or is lost.
-            backoff: The strategy used to determine how
-                long to wait between retries. Must take as input the number of
-                the current retry and output a :obj:`float`.
-
-        Returns:
-            Whether the reconnection succeeded.
-        """
-        for retry in range(1, retries + 1):
-            if self._connect():
-                log.debug('Reconnected to the Slack API')
-                return True
-            else:
-                interval = backoff(retry)
-                log.debug("Waiting %.3fs before retrying", interval)
-                time.sleep(interval)
-
-        return False
-
-    def run(self, *, token: str = None, interval: float = 0.5,
-            retries: int = 16, backoff: Callable[[int], float] = None,
+    def run(self, *, connector: Union[str, SlackClient, None] = None,
+            interval: float = 0.5, retries: int = 16,
+            backoff: Callable[[int], float] = None,
             until: Callable[[List[dict]], bool] = None) -> None:
         """
         Connect to the Slack API and run the event handler loop.
 
         Args:
-            token: A Slack API token. If absent an attempt will be made to use
-                the environment variable supplied at instantiation.
+            connector: A Slack API token or :obj:`SlackClient`. If absent an
+                attempt will be made to use the environment variable supplied
+                at instantiation.
             interval: The number of seconds to wait between fetching events
                 from the Slack API.
             retries: The number of retry attempts to make if a connection to
@@ -232,6 +275,8 @@ class Layabout:
                 absent this method will run forever.
 
         Raises:
+            TypeError: If an unsupported connector is given.
+            MissingSlackToken: If no API token is available.
             FailedConnection: If connecting to the Slack API fails.
 
         .. _truncated exponential backoff:
@@ -240,30 +285,14 @@ class Layabout:
         backoff = backoff or _truncated_exponential
         until = until or _forever
 
-        if not (self._connect(token=token)
-                or self._reconnect(retries=retries, backoff=backoff)):
-            raise FailedConnection('Failed to connect to the Slack API')
+        self._ensure_slack(
+            connector=connector,
+            retries=retries,
+            backoff=backoff
+        )
 
         while True:
-            try:
-                # Fetch new RTM events from the API.
-                events = self._slack.rtm_read()
-
-            # This is necessary to handle an error caused by a bug in Slack's
-            # Python client. For more information see
-            # https://github.com/slackhq/python-slackclient/issues/127
-            #
-            # TODO: The TimeoutError could be more elegantly resolved by making
-            # a PR to the websocket-client library and letting them coerce that
-            # exception to a WebSocketTimeoutException.
-            except (WebSocketConnectionClosedException, TimeoutError):
-                log.debug('Lost connection to the Slack API, attempting to '
-                          'reconnect')
-                # Attempt to reconnect with our existing SlackClient and token.
-                if self._reconnect(retries=retries, backoff=backoff):
-                    continue
-
-                raise FailedConnection('Failed to reconnect to the Slack API')
+            events = self._slack.fetch_events()
 
             if not until(events):
                 log.debug('Exiting event loop')
@@ -274,17 +303,17 @@ class Layabout:
                 type_ = event.get('type')
                 for handler in self._handlers[type_] + self._handlers['*']:
                     fn, kwargs = handler
-                    fn(self._slack, event, **kwargs)
+                    fn(self._slack.inner, event, **kwargs)
 
             # Maybe don't pester the Slack API too much.
             time.sleep(interval)
 
 
-def _forever(events: List[dict]) -> bool:  # pragma: no cover
+def _forever(events: List[dict]) -> bool:  # pragma: no cover because duh.
     """ Run Layabout in an infinite loop. """
     return True
 
 
 def _truncated_exponential(retry: int) -> float:
     """ An exponential backoff strategy for reconnecting to the Slack API. """
-    return (min(((2 ** retry) + random.choice(range(1000))), 64000) / 1000)
+    return (min(((2 ** retry) + random.randrange(1000)), 64000) / 1000)

@@ -1,13 +1,17 @@
 import os
 from unittest.mock import MagicMock, call
 from typing import Iterable
+import random
 
 import pytest
+from slackclient import SlackClient
 
 from layabout import (
+    FailedConnection,
     Layabout,
     MissingSlackToken,
-    FailedConnection,
+    _SlackClientWrapper,
+    _truncated_exponential,
 )
 
 TOKEN = "This ain't no Slack API token."
@@ -28,7 +32,8 @@ def mock_slack(connections: Iterable = None,
         tuple: A 2-tuple containing a mock :obj:`slackclient.SlackClient`
             and an associated instance.
     """
-    slack = MagicMock()
+    slack = MagicMock(spec=SlackClient)
+    slack.server = MagicMock()
 
     if connections:
         slack.rtm_connect = MagicMock(side_effect=connections)
@@ -36,7 +41,17 @@ def mock_slack(connections: Iterable = None,
     if reads:
         slack.rtm_read = MagicMock(side_effect=reads)
 
-    return MagicMock(return_value=slack), slack
+    return MagicMock(spec=SlackClient, return_value=slack), slack
+
+
+def mock_slack_wrapper(connections: Iterable = None):
+    slack_wrapper = MagicMock(spec=_SlackClientWrapper)
+
+    if connections:
+        slack_wrapper.is_connected = MagicMock(side_effect=connections)
+
+    cls = MagicMock(spec=_SlackClientWrapper, return_value=slack_wrapper)
+    return cls, slack_wrapper
 
 # ---- Fixtures ---------------------------------------------------------------
 
@@ -166,6 +181,20 @@ def test_layabout_handlers_can_be_decorated_and_used_normally():
 # ---- Connection tests -------------------------------------------------------
 
 
+def test_layabout_raises_type_error_with_invalid_connector():
+    """
+    Test that layabout cannot connect to Slack with a pineapple.
+    """
+    layabout = Layabout()
+
+    class Pineapple:
+        pass
+
+    with pytest.raises(TypeError):
+        # Turns out you can't connect to Slack with a Pineapple.
+        layabout.run(connector=Pineapple)
+
+
 def test_layabout_can_connect_to_slack_with_token(monkeypatch):
     """
     Test that layabout can connect to the Slack API when given a valid Slack
@@ -173,15 +202,12 @@ def test_layabout_can_connect_to_slack_with_token(monkeypatch):
     """
     layabout = Layabout()
     SlackClient, slack = mock_slack(connections=(True,))
-
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
-    layabout.run(token=TOKEN, until=lambda e: False)
+    layabout.run(connector=TOKEN, until=lambda e: False)
 
-    # Verify we instantiated a SlackClient with the given token and used it to
-    # connect to the Slack API.
+    # Verify we instantiated a SlackClient with the given token.
     SlackClient.assert_called_with(token=TOKEN)
-    slack.rtm_connect.assert_called_with()
 
 
 def test_layabout_can_connect_to_slack_with_env_var(monkeypatch):
@@ -197,19 +223,32 @@ def test_layabout_can_connect_to_slack_with_env_var(monkeypatch):
     monkeypatch.setattr(os, 'environ', environ)
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
-    # Purposefully don't provide a token so we have to use an env var.
-    layabout.run(token=None, until=lambda e: False)
+    # Purposefully don't provide a connector so we have to use an env var.
+    layabout.run(connector=None, until=lambda e: False)
 
     # Verify we instantiated a SlackClient with the given token and used it to
     # connect to the Slack API.
     SlackClient.assert_called_with(token=TOKEN)
-    slack.rtm_connect.assert_called_with()
 
 
-def test_layabout_raises_failed_connection_without_token(monkeypatch):
+def test_layabout_can_connect_to_slack_with_existing_slack_client(monkeypatch):
     """
-    Test that layabout raises a FailedConnection if there is no Slack API token
-    for it to use.
+    TODO:
+        - make this test actually useful
+        - reorder conn tests
+        - test unconnected slack gets connected
+        - connected slack isn't touched
+    """
+    layabout = Layabout()
+    _, slack = mock_slack(connections=(True,))
+
+    layabout.run(connector=slack, until=lambda e: False)
+
+
+def test_layabout_raises_missing_slack_token_without_token(monkeypatch):
+    """
+    Test that layabout raises a MissingSlackToken if there is no Slack API
+    token for it to use.
     """
     environ = dict()
     layabout = Layabout()
@@ -220,55 +259,53 @@ def test_layabout_raises_failed_connection_without_token(monkeypatch):
         # until will exit early here just to be safe.
         layabout.run(until=lambda e: False)
 
-    assert str(exc.value) == 'Cannot connect to the Slack API without a token'
+    assert str(exc.value) == 'Could not acquire token from SLACK_API_TOKEN'
 
 
-def test_layabout_raises_failed_connection_on_failed_connection(monkeypatch):
+def test_layabout_raises_missing_slack_token_with_empty_token():
+    """
+    Test that layabout raises a MissingSlackToken if given an empty Slack API
+    token.
+    """
+    layabout = Layabout()
+
+    with pytest.raises(MissingSlackToken) as exc:
+        # until will exit early here just to be safe.
+        layabout.run(connector='', until=lambda e: False)
+
+    assert str(exc.value) == 'The empty string is an invalid Slack API token'
+
+
+def test_layabout_can_connect_to_slack():
+    wrapper = _SlackClientWrapper(
+        slack=MagicMock(),
+        retries=1,
+        backoff=lambda r: 0
+    )
+    # Retry once after failure.
+    wrapper.is_connected = MagicMock(side_effect=(False, True))
+
+    wrapper.connect_with_retry()
+    wrapper.inner.rtm_connect.assert_called_with()
+
+
+def test_layabout_raises_failed_connection_on_failed_connection():
     """
     Test that layabout raises a FailedConnection if the connection to the Slack
     API fails.
     """
-    layabout = Layabout()
-    # Fail the first connection and the subsequent reconnection.
-    connections = (False, False)
-    SlackClient, _ = mock_slack(connections=connections)
+    wrapper = _SlackClientWrapper(
+        slack=MagicMock(),
+        retries=1,
+        backoff=lambda r: 0
+    )
+    # Retry once after failure.
+    wrapper.is_connected = MagicMock(side_effect=(False, False))
 
-    monkeypatch.setattr('layabout.SlackClient', SlackClient)
-
-    # Retry once after failure. until will exit early just to be safe.
     with pytest.raises(FailedConnection) as exc:
-        layabout.run(
-            token=TOKEN,
-            retries=1,
-            backoff=lambda r: 0,
-            until=lambda e: False
-        )
+        wrapper.connect_with_retry()
 
     assert str(exc.value) == 'Failed to connect to the Slack API'
-
-
-def test_layabout_raises_connection_error_on_failed_reconnection(monkeypatch):
-    """
-    Test that layabout raises a FailedConnection if attempts to reconnect to
-    the Slack API fail.
-    """
-    layabout = Layabout()
-    # Succeed with the first connection and fail the subsequent reconnection.
-    connections = (True, False)
-    SlackClient, _ = mock_slack(connections=connections, reads=TimeoutError)
-
-    monkeypatch.setattr('layabout.SlackClient', SlackClient)
-
-    # Retry once after failure. until will exit early just to be safe. Don't
-    # provide a backoff callback so the default behavior will be tested.
-    with pytest.raises(FailedConnection) as exc:
-        layabout.run(
-            token=TOKEN,
-            retries=1,
-            until=lambda e: False
-        )
-
-    assert str(exc.value) == 'Failed to reconnect to the Slack API'
 
 
 def test_layabout_can_reuse_an_existing_client_to_reconnect(monkeypatch):
@@ -287,7 +324,7 @@ def test_layabout_can_reuse_an_existing_client_to_reconnect(monkeypatch):
     # Retry connecting twice to verify reconnection logic was evaluated.
     # until will exit early just to be safe.
     layabout.run(
-        token=TOKEN,
+        connector=TOKEN,
         retries=2,
         backoff=lambda r: 0,
         until=lambda e: False
@@ -313,11 +350,23 @@ def test_layabout_can_continue_after_successful_reconnection(monkeypatch):
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
     layabout.run(
-        token=TOKEN,
+        connector=TOKEN,
         retries=1,
         backoff=lambda r: 0,
         until=lambda e: False
     )
+
+
+def test_layabout_backoff_backs_off(monkeypatch):
+    """ This is _truly_ a useless test. Why have I done this? """
+    monkeypatch.setattr('random.randrange', lambda n: 0)
+    assert _truncated_exponential(0) == 0.001
+
+
+def test_layabout_backoff_does_not_exceed_64_seconds():
+    """ It doesn't go to 65.0. """
+    assert _truncated_exponential(16) == 64.0
+    assert _truncated_exponential(17) == 64.0
 
 # ---- Event loop tests -------------------------------------------------------
 
@@ -334,7 +383,7 @@ def test_layabout_can_handle_an_event(events, run_once, monkeypatch):
 
     layabout.handle('hello')(handle_hello)
     layabout.run(
-        token=TOKEN,
+        connector=TOKEN,
         interval=0,
         retries=0,
         backoff=lambda r: 0,
@@ -358,7 +407,7 @@ def test_layabout_can_handle_an_event_with_kwargs(events, run_once,
 
     layabout.handle('hello', kwargs=kwargs)(handle_hello)
     layabout.run(
-        token=TOKEN,
+        connector=TOKEN,
         interval=0,
         retries=0,
         backoff=lambda r: 0,
@@ -381,7 +430,7 @@ def test_layabout_can_only_handle_events_that_happen(events, run_once,
 
     layabout.handle('this will never happen')(aint_happenin)
     layabout.run(
-        token=TOKEN,
+        connector=TOKEN,
         interval=0,
         retries=0,
         backoff=lambda r: 0,
@@ -405,7 +454,7 @@ def test_layabout_can_handle_one_event_multiple_times(events, run_once,
     layabout.handle('hello')(handle_hello1)
     layabout.handle('hello')(handle_hello2)
     layabout.run(
-        token=TOKEN,
+        connector=TOKEN,
         interval=0,
         retries=0,
         backoff=lambda r: 0,
@@ -429,7 +478,7 @@ def test_layabout_can_handle_multiple_events(events, run_once, monkeypatch):
     layabout.handle('hello')(handle_hello)
     layabout.handle('goodbye')(handle_goodbye)
     layabout.run(
-        token=TOKEN,
+        connector=TOKEN,
         interval=0,
         retries=0,
         backoff=lambda r: 0,
@@ -454,7 +503,7 @@ def test_layabout_can_handle_an_event_with_a_splat_handler(events, run_once,
 
     layabout.handle('*')(splat)
     layabout.run(
-        token=TOKEN,
+        connector=TOKEN,
         interval=0,
         retries=0,
         backoff=lambda r: 0,
@@ -477,7 +526,7 @@ def test_layabout_can_handle_all_events_with_a_splat_handler(events, run_once,
 
     layabout.handle('*')(splat)
     layabout.run(
-        token=TOKEN,
+        connector=TOKEN,
         interval=0,
         retries=0,
         backoff=lambda r: 0,
@@ -505,7 +554,7 @@ def test_layabout_can_handle_events_with_normal_and_splat_handlers(
     layabout.handle('hello')(handle_hello)
     layabout.handle('*')(splat)
     layabout.run(
-        token=TOKEN,
+        connector=TOKEN,
         interval=0,
         retries=0,
         backoff=lambda r: 0,
