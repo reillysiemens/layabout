@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import List
 
 from setuptools import setup
-from pip.req import parse_requirements
 
 if sys.version_info < (3, 6):
     sys.exit('Only Python 3.6+ is supported.')
@@ -44,7 +43,20 @@ def get_reqs(path: Path) -> List[str]:
     Returns:
         The pip-compatible version strings.
     """
-    return [str(r.req) for r in parse_requirements(str(path), session=False)]
+    reqs = []
+    with open(str(path)) as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("-r"):
+                _, next_filename = line.split(" ")
+                next_file = path.parent / next_filename
+                reqs.extend(get_reqs(next_file))
+            elif line.startswith("#"):
+                pass
+            else:
+                reqs.append(line)
+
+    return reqs
 
 here = Path(__name__).cwd()
 readme = (here / 'README.rst').read_text()
