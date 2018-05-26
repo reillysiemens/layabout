@@ -261,6 +261,7 @@ class Layabout:
             retries=retries,
             backoff=backoff
         )
+        assert self._slack is not None
 
         while True:
             events = self._slack.fetch_events()
