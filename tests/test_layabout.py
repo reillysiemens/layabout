@@ -7,6 +7,7 @@ import pytest
 from slackclient import SlackClient
 
 from layabout import (
+    EnvVar,
     FailedConnection,
     Layabout,
     MissingSlackToken,
@@ -215,16 +216,16 @@ def test_layabout_can_connect_to_slack_with_env_var(monkeypatch):
     Test that layabout can discover and use a Slack API token from an
     environment variable when not given one directly.
     """
-    env_var = '_TEST_SLACK_API_TOKEN'
+    env_var = EnvVar('_TEST_SLACK_API_TOKEN')
     environ = {env_var: TOKEN}
-    layabout = Layabout(env_var=env_var)
+    layabout = Layabout()
     SlackClient, slack = mock_slack(connections=(True,))
 
     monkeypatch.setattr(os, 'environ', environ)
     monkeypatch.setattr('layabout.SlackClient', SlackClient)
 
     # Purposefully don't provide a connector so we have to use an env var.
-    layabout.run(connector=None, until=lambda e: False)
+    layabout.run(connector=env_var, until=lambda e: False)
 
     # Verify we instantiated a SlackClient with the given token and used it to
     # connect to the Slack API.

@@ -24,21 +24,6 @@ _Handlers = DefaultDict[str, List[Tuple[Callable, dict]]]
 log = logging.getLogger(__name__)
 
 
-def _methoddispatch(fn: Callable) -> Callable:
-    """
-    Wrap single dispatch to ignore self and make it usable for methods.
-    Many thanks to Zero Piraeus from Stack Overflow.
-
-    https://stackoverflow.com/a/24602374/3288364
-    """
-    dispatcher = singledispatch(fn)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        return dispatcher.dispatch(args[1].__class__)(*args, **kwargs)
-    wrapper.register = dispatcher.register
-    update_wrapper(wrapper, fn)
-    return wrapper
-
-
 class LayaboutError(Exception):
     """ Base error for all Layabout exceptions. """
 
@@ -54,6 +39,11 @@ class FailedConnection(LayaboutError, ConnectionError):
     Inherits from both :obj:`LayaboutError` and the built-in
     :obj:`ConnectionError` for convenience in exception handling.
     """
+
+
+class EnvVar(str):
+    """ A newtype for differentiating string tokens from env var names. """
+
 
 class _SlackClientWrapper:
     def __init__(self, slack: SlackClient, retries: int,
@@ -140,8 +130,8 @@ class Layabout:
 
            layabout.run()
     """
-    def __init__(self, *, env_var: str = 'SLACK_API_TOKEN') -> None:
-        self._env_var = env_var
+    def __init__(self) -> None:
+        self._env_var = EnvVar('SLACK_API_TOKEN')
         self._slack: self._SlackClientWrapper = None
         self._handlers: _Handlers = defaultdict(list)
 
@@ -214,42 +204,13 @@ class Layabout:
     def _ensure_slack(self, connector: Any, retries: int,
                       backoff: Callable[[int], float]) -> None:
         """ Ensure we have a SlackClient. """
-        slack = self._create_slack(connector)
+        connector = self._env_var if connector is None else connector
+        slack = _create_slack(connector)
         self._slack = _SlackClientWrapper(
             slack=slack,
             retries=retries,
             backoff=backoff
         )
-
-    @_methoddispatch
-    def _create_slack(self, connector: Any) -> None:
-        """ Default connector. Raises an error with unsupported connectors. """
-        raise TypeError(f"Invalid connector: {type(connector)}")
-
-    @_create_slack.register(type(None))
-    def _create_slack_with_env_var(self, _: None) -> SlackClient:
-        """ Create a SlackClient with a token from an environment variable. """
-        token = os.getenv(self._env_var)
-        if not token:
-            raise MissingSlackToken("Could not acquire token from "
-                                    f"{self._env_var}")
-
-        return SlackClient(token=token)
-
-    @_create_slack.register(str)
-    def _create_slack_with_token(self, token: str) -> SlackClient:
-        """ Create a SlackClient with a provided token. """
-        if token == '':
-            raise MissingSlackToken("The empty string is an invalid Slack API "
-                                    "token")
-
-        return SlackClient(token=token)
-
-    @_create_slack.register(SlackClient)
-    def _create_slack_with_slack_client(self,
-                                        slack: SlackClient) -> SlackClient:
-        """ Use an existing SlackClient if we don't already have one. """
-        return slack
 
     def run(self, *, connector: Union[str, SlackClient, None] = None,
             interval: float = 0.5, retries: int = 16,
@@ -308,6 +269,39 @@ class Layabout:
 
             # Maybe don't pester the Slack API too much.
             time.sleep(interval)
+
+
+@singledispatch
+def _create_slack(connector: Any) -> None:
+    """ Default connector. Raises an error with unsupported connectors. """
+    raise TypeError(f"Invalid connector: {type(connector)}")
+
+
+@_create_slack.register(EnvVar)
+def _create_slack_with_env_var(env_var: EnvVar) -> SlackClient:
+    """ Create a SlackClient with a token from an env var. """
+    token = os.getenv(env_var)
+    if not token:
+        raise MissingSlackToken("Could not acquire token from "
+                                f"{env_var}")
+
+    return SlackClient(token=token)
+
+
+@_create_slack.register(str)
+def _create_slack_with_token(token: str) -> SlackClient:
+    """ Create a SlackClient with a provided token. """
+    if token == '':
+        raise MissingSlackToken("The empty string is an invalid Slack API "
+                                "token")
+
+    return SlackClient(token=token)
+
+
+@_create_slack.register(SlackClient)
+def _create_slack_with_slack_client(slack: SlackClient) -> SlackClient:
+    """ Use an existing SlackClient if we don't already have one. """
+    return slack
 
 
 def _forever(events: List[dict]) -> bool:  # pragma: no cover because duh.
