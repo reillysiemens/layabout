@@ -262,7 +262,7 @@ class Layabout:
 
             # Handle events!
             for event in events:
-                type_ = event.get('type')
+                type_ = event.get('type', '')
                 for handler in self._handlers[type_] + self._handlers['*']:
                     fn, kwargs = handler
                     fn(self._slack.inner, event, **kwargs)
