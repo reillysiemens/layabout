@@ -1,7 +1,6 @@
 import os
 from unittest.mock import MagicMock, call
 from typing import Iterable
-import random
 
 import pytest
 from slackclient import SlackClient

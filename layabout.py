@@ -13,7 +13,7 @@ from typing import (
     Union,
 )
 from inspect import signature, Signature
-from functools import singledispatch, update_wrapper, wraps
+from functools import singledispatch, wraps
 from collections import defaultdict
 
 from slackclient import SlackClient
