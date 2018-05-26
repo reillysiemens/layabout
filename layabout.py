@@ -2,7 +2,16 @@ import os
 import time
 import random
 import logging
-from typing import Any, DefaultDict, Dict, Callable, List, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 from inspect import signature, Signature
 from functools import singledispatch, update_wrapper, wraps
 from collections import defaultdict
@@ -132,7 +141,7 @@ class Layabout:
     """
     def __init__(self) -> None:
         self._env_var = EnvVar('SLACK_API_TOKEN')
-        self._slack: self._SlackClientWrapper = None
+        self._slack: Optional[_SlackClientWrapper] = None
         self._handlers: _Handlers = defaultdict(list)
 
     @staticmethod
