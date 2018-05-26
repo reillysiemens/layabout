@@ -272,7 +272,7 @@ class Layabout:
 
 
 @singledispatch
-def _create_slack(connector: Any) -> None:
+def _create_slack(connector: Any):
     """ Default connector. Raises an error with unsupported connectors. """
     raise TypeError(f"Invalid connector: {type(connector)}")
 
