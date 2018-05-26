@@ -107,6 +107,7 @@ class _SlackClientWrapper:
             log.debug('Lost connection to the Slack API, attempting to '
                       'reconnect')
             self.connect_with_retry()
+            return []
 
 
 class Layabout:
