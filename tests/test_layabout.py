@@ -10,11 +10,12 @@ from layabout import (
     FailedConnection,
     Layabout,
     MissingSlackToken,
+    Token,
     _SlackClientWrapper,
     _truncated_exponential,
 )
 
-TOKEN = "This ain't no Slack API token."
+TOKEN = Token("This ain't no Slack API token.")
 
 # ---- Auxiliary functions ----------------------------------------------------
 
@@ -231,18 +232,24 @@ def test_layabout_can_connect_to_slack_with_env_var(monkeypatch):
     SlackClient.assert_called_with(token=TOKEN)
 
 
-def test_layabout_can_connect_to_slack_with_existing_slack_client(monkeypatch):
+def test_layabout_can_connect_to_slack_with_existing_slack_client():
     """
-    TODO:
-        - make this test actually useful
-        - reorder conn tests
-        - test unconnected slack gets connected
-        - connected slack isn't touched
+    Test that layabout can use an existing SlackClient as a connector.
     """
     layabout = Layabout()
     _, slack = mock_slack(connections=(True,))
 
     layabout.run(connector=slack, until=lambda e: False)
+
+
+def test_layabout_raises_type_error_with_string_connector():
+    layabout = Layabout()
+
+    with pytest.raises(TypeError) as exc:
+        layabout.run(connector='', until=lambda e: False)
+
+    assert str(exc.value) == ('Use layabout.Token or layabout.EnvVar '
+                              'instead of str')
 
 
 def test_layabout_raises_missing_slack_token_without_token(monkeypatch):
@@ -271,7 +278,7 @@ def test_layabout_raises_missing_slack_token_with_empty_token():
 
     with pytest.raises(MissingSlackToken) as exc:
         # until will exit early here just to be safe.
-        layabout.run(connector='', until=lambda e: False)
+        layabout.run(connector=Token(''), until=lambda e: False)
 
     assert str(exc.value) == 'The empty string is an invalid Slack API token'
 

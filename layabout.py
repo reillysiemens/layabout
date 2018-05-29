@@ -51,7 +51,11 @@ class FailedConnection(LayaboutError, ConnectionError):
 
 
 class EnvVar(str):
-    """ A newtype for differentiating string tokens from env var names. """
+    """ A newtype for differentiating env var names from strings. """
+
+
+class Token(str):
+    """ A newtype for differentiating API tokens from strings. """
 
 
 class _SlackClientWrapper:
@@ -287,6 +291,12 @@ def _create_slack(connector: Any):
     raise TypeError(f"Invalid connector: {type(connector)}")
 
 
+@_create_slack.register(str)
+def _create_slack_with_string(string: str):
+    """ Direct users to prefer Token and EnvVar over raw strings. """
+    raise TypeError("Use layabout.Token or layabout.EnvVar instead of str")
+
+
 @_create_slack.register(EnvVar)
 def _create_slack_with_env_var(env_var: EnvVar) -> SlackClient:
     """ Create a SlackClient with a token from an env var. """
@@ -298,10 +308,10 @@ def _create_slack_with_env_var(env_var: EnvVar) -> SlackClient:
     return SlackClient(token=token)
 
 
-@_create_slack.register(str)
-def _create_slack_with_token(token: str) -> SlackClient:
+@_create_slack.register(Token)
+def _create_slack_with_token(token: Token) -> SlackClient:
     """ Create a SlackClient with a provided token. """
-    if token == '':
+    if token == Token(''):
         raise MissingSlackToken("The empty string is an invalid Slack API "
                                 "token")
 
@@ -310,7 +320,7 @@ def _create_slack_with_token(token: str) -> SlackClient:
 
 @_create_slack.register(SlackClient)
 def _create_slack_with_slack_client(slack: SlackClient) -> SlackClient:
-    """ Use an existing SlackClient if we don't already have one. """
+    """ Use an existing SlackClient. """
     return slack
 
 
