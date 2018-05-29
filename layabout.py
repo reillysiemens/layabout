@@ -301,21 +301,17 @@ def _create_slack_with_string(string: str):
 def _create_slack_with_env_var(env_var: EnvVar) -> SlackClient:
     """ Create a SlackClient with a token from an env var. """
     token = os.getenv(env_var)
-    if not token:
-        raise MissingSlackToken("Could not acquire token from "
-                                f"{env_var}")
-
-    return SlackClient(token=token)
+    if token:
+        return SlackClient(token=token)
+    raise MissingSlackToken(f"Could not acquire token from {env_var}")
 
 
 @_create_slack.register(Token)
 def _create_slack_with_token(token: Token) -> SlackClient:
     """ Create a SlackClient with a provided token. """
-    if token == Token(''):
-        raise MissingSlackToken("The empty string is an invalid Slack API "
-                                "token")
-
-    return SlackClient(token=token)
+    if token != Token(''):
+        return SlackClient(token=token)
+    raise MissingSlackToken("The empty string is an invalid Slack API token")
 
 
 @_create_slack.register(SlackClient)
