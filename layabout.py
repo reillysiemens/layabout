@@ -51,14 +51,18 @@ class FailedConnection(LayaboutError, ConnectionError):
 
 
 class EnvVar(str):
-    """ A newtype for differentiating env var names from strings. """
+    """ A subclass for differentiating env var names from strings. """
 
 
 class Token(str):
-    """ A newtype for differentiating API tokens from strings. """
+    """ A subclass for differentiating Slack API tokens from strings. """
 
 
 class _SlackClientWrapper:
+    """
+    An abstraction on top of slackclient.SlackClient to hide its pain points
+    from the core Layabout class.
+    """
     def __init__(self, slack: SlackClient, retries: int,
                  backoff: Callable[[int], float]) -> None:
         self.inner = slack
@@ -117,20 +121,16 @@ class Layabout:
     """
     An event handler on top of the Slack RTM API.
 
-    Args:
-        env_var: The environment variable to try to load a Slack API token
-            from.
-
     Example:
 
         .. code-block:: python
 
            from layabout import Layabout
 
-           layabout = Layabout()
+           app = Layabout()
 
 
-           @layabout.handle('message')
+           @app.handle('message')
            def echo(slack, event):
                \"\"\" Echo all messages seen by the app. \"\"\"
                channel = event['channel']
@@ -141,7 +141,7 @@ class Layabout:
                if subtype != 'bot_message':
                    slack.rtm_send_message(channel, message)
 
-           layabout.run()
+           app.run()
     """
     def __init__(self) -> None:
         self._env_var = EnvVar('SLACK_API_TOKEN')
@@ -225,7 +225,7 @@ class Layabout:
             backoff=backoff
         )
 
-    def run(self, *, connector: Union[str, SlackClient, None] = None,
+    def run(self, *, connector: Union[EnvVar, Token, SlackClient, None] = None,
             interval: float = 0.5, retries: int = 16,
             backoff: Callable[[int], float] = None,
             until: Callable[[List[dict]], bool] = None) -> None:
@@ -233,9 +233,11 @@ class Layabout:
         Connect to the Slack API and run the event handler loop.
 
         Args:
-            connector: A Slack API token or :obj:`SlackClient`. If absent an
-                attempt will be made to use the environment variable supplied
-                at instantiation.
+            connector: A means of connecting to the Slack API. This can be an
+                API :obj:`Token`, an :obj:`EnvVar` from which a token can be
+                retrieved, or an established :obj:`SlackClient` instance. If
+                absent an attempt will be made to use the ``SLACK_API_TOKEN``
+                environment variable.
             interval: The number of seconds to wait between fetching events
                 from the Slack API.
             retries: The number of retry attempts to make if a connection to
@@ -293,13 +295,13 @@ def _create_slack(connector: Any):
 
 @_create_slack.register(str)
 def _create_slack_with_string(string: str):
-    """ Direct users to prefer Token and EnvVar over raw strings. """
+    """ Direct users to prefer :obj:`Token` and :obj:`EnvVar` over strings. """
     raise TypeError("Use layabout.Token or layabout.EnvVar instead of str")
 
 
 @_create_slack.register(EnvVar)
 def _create_slack_with_env_var(env_var: EnvVar) -> SlackClient:
-    """ Create a SlackClient with a token from an env var. """
+    """ Create a :obj:`SlackClient` with a token from an env var. """
     token = os.getenv(env_var)
     if token:
         return SlackClient(token=token)
@@ -308,7 +310,7 @@ def _create_slack_with_env_var(env_var: EnvVar) -> SlackClient:
 
 @_create_slack.register(Token)
 def _create_slack_with_token(token: Token) -> SlackClient:
-    """ Create a SlackClient with a provided token. """
+    """ Create a :obj:`SlackClient` with a provided token. """
     if token != Token(''):
         return SlackClient(token=token)
     raise MissingSlackToken("The empty string is an invalid Slack API token")
@@ -316,7 +318,7 @@ def _create_slack_with_token(token: Token) -> SlackClient:
 
 @_create_slack.register(SlackClient)
 def _create_slack_with_slack_client(slack: SlackClient) -> SlackClient:
-    """ Use an existing SlackClient. """
+    """ Use an existing :obj:`SlackClient`. """
     return slack
 
 
