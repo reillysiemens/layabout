@@ -8,6 +8,7 @@ from typing import (
     DefaultDict,
     Dict,
     List,
+    NoReturn,
     Optional,
     Tuple,
     Union,
@@ -218,7 +219,7 @@ class Layabout:
                       backoff: Callable[[int], float]) -> None:
         """ Ensure we have a SlackClient. """
         connector = self._env_var if connector is None else connector
-        slack = _create_slack(connector)
+        slack: SlackClient = _create_slack(connector)
         self._slack = _SlackClientWrapper(
             slack=slack,
             retries=retries,
@@ -288,13 +289,13 @@ class Layabout:
 
 
 @singledispatch
-def _create_slack(connector: Any):
+def _create_slack(connector: Any) -> NoReturn:
     """ Default connector. Raises an error with unsupported connectors. """
     raise TypeError(f"Invalid connector: {type(connector)}")
 
 
 @_create_slack.register(str)
-def _create_slack_with_string(string: str):
+def _create_slack_with_string(string: str) -> NoReturn:
     """ Direct users to prefer :obj:`Token` and :obj:`EnvVar` over strings. """
     raise TypeError("Use layabout.Token or layabout.EnvVar instead of str")
 
