@@ -19,11 +19,6 @@ from collections import defaultdict
 
 from slackclient import SlackClient
 
-# TODO: This is a dependency of slackclient needed for exception handling. In
-# the future, we might be able to remove this. For now we don't want to declare
-# it as an explicit dependency.
-from websocket import WebSocketConnectionClosedException
-
 __author__ = 'Reilly Tucker Siemens'
 __email__ = 'reilly@tuckersiemens.com'
 __version__ = '1.0.0b'
@@ -104,14 +99,11 @@ class _SlackClientWrapper:
         try:
             return self.inner.rtm_read()
 
-        # This is necessary to handle an error caused by a bug in Slack's
-        # Python client. For more information see
-        # https://github.com/slackhq/python-slackclient/issues/127
-        #
         # TODO: The TimeoutError could be more elegantly resolved by making
         # a PR to the websocket-client library and letting them coerce that
-        # exception to a WebSocketTimeoutException.
-        except (WebSocketConnectionClosedException, TimeoutError):
+        # exception to a WebSocketTimeoutException that could be caught by
+        # the slackclient library and then we could just use auto_reconnect.
+        except TimeoutError:
             log.debug('Lost connection to the Slack API, attempting to '
                       'reconnect')
             self.connect_with_retry()
