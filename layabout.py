@@ -218,7 +218,8 @@ class Layabout:
             backoff=backoff
         )
 
-    def run(self, *, connector: Union[EnvVar, Token, SlackClient, None] = None,
+    def run(self, *,
+            connector: Union[EnvVar, Token, SlackClient, None] = None,
             interval: float = 0.5, retries: int = 16,
             backoff: Callable[[int], float] = None,
             until: Callable[[List[dict]], bool] = None) -> None:
@@ -234,11 +235,12 @@ class Layabout:
             interval: The number of seconds to wait between fetching events
                 from the Slack API.
             retries: The number of retry attempts to make if a connection to
-                Slack if not established or is lost.
+                Slack is not established or is lost.
             backoff: The strategy used to determine how long to wait between
                 retries. Must take as input the number of the current retry and
-                output a :obj:`float`. If absent a `truncated exponential
-                backoff`_ strategy will be used.
+                output a :obj:`float`. The retry count begins at 1 and
+                continues up to ``retries``. If absent a
+                `truncated exponential backoff`_ strategy will be used.
             until: The condition used to evaluate whether this method
                 terminates. Must take as input a :obj:`list` of :obj:`dict`
                 representing Slack RTM API events and return a :obj:`bool`. If
