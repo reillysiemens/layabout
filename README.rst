@@ -13,85 +13,73 @@ Layabout
     :target: https://github.com/reillysiemens/layabout/blob/master/LICENSE
     :alt: ISC Licensed
 
-A small event handling library on top of the Slack RTM API.
+.. TODO Figure out what the Read the Docs URL should actually be.
 
-- Documentation: TODO
-- GitHub: https://github.com/reillysiemens/layabout
-- PyPi: TODO
+.. image:: https://img.shields.io/readthedocs/layabout/latest.svg?style=flat-square
+    :target: http://python-slackclient.readthedocs.io/en/latest/?badge=latest
+    :alt: Docs on Read the Docs
 
-What's in the Box?
-------------------
+.. image:: https://img.shields.io/pypi/v/layabout.svg?style=flat-square
+    :target: https://pypi.org/project/layabout
+    :alt: Layabout on PyPI
 
-- 🎉 The most fun you've had interacting with Slack in a while.
-- 🐍 Python 3.6+ support
-- 🆓 Free software: ISC License
+.. image:: https://img.shields.io/pypi/pyversions/layabout.svg?style=flat-square
+    :target: https://pypi.python.org/pypi/layabout
+    :alt: Python Version
 
-Features
---------
-
-- Automatically load Slack API tokens from environment variables or provide
-  them directly.
-- Register multiple event handlers for one event.
-- Register a single handler for multiple events by stacking decorators.
-- Configurable application shutdown.
-- Configurable retry logic in the event of lost connections.
-- Lightweight. Depends only on the official Python `slackclient`_ library.
-
-Installation
-------------
-
-.. code-block:: bash
-
-   pip install git+https://github.com/reillysiemens/layabout.git@master
-
-Quickstart
-----------
-
-Here's a quick example of an echo bot implemented with Layabout:
-
-.. code-block:: python
-
-   from layabout import Layabout
-
-   layabout = Layabout('app')
-
-
-   @layabout.handle('message')
-   def echo(slack, event):
-       """ Echo all messages seen by the app. """
-       channel = event['channel']
-       message = event['text']
-       subtype = event.get('subtype')
-
-       # Avoid an infinite loop of echoing our own messages.
-       if subtype != 'bot_message':
-           slack.rtm_send_message(channel, message)
-
-   layabout.run()
-
-Here's another example that uses Layabout to debug all Slack events seen by a
-bot until someone leaves a channel:
+**Layabout** is a small event handling library on top of the Slack RTM API.
 
 .. code-block:: python
 
    from pprint import pprint
    from layabout import Layabout
 
-   layabout = Layabout('app')
+   app = Layabout()
 
 
-   @layabout.handle('*')
+   @app.handle('*')
    def debug(slack, event):
        """ Pretty print every event seen by the app. """
        pprint(event)
 
 
+   @app.handle('message')
+   def echo(slack, event):
+       """ Echo all messages seen by the app except our own. """
+       if event.get('subtype') != 'bot_message':
+           slack.rtm_send_message(event['channel'], event['text'])
+
+
    def someone_leaves(events):
        """ Return False if a member leaves, otherwise True. """
-       return not any(e['type'] == 'member_left_channel' for e in events)
+       return not any(e.get('type') == 'member_left_channel'
+                      for e in events)
 
-   layabout.run(until=someone_leaves)
-   print('Looks like someone left a channel!')
+   if __name__ == '__main__':
+       app.run(until=someone_leaves)
+       print("Looks like someone left a channel!")
+
+Installation
+------------
+
+To install **Layabout** use `pip`_ and `PyPI`_:
+
+.. code-block:: bash
+
+   pip install layabout
+
+Features
+--------
+
+Not sold yet? Here's a list of features to sweeten the deal.
+
+- Automatically load Slack API tokens from environment variables, provide
+  them directly, or even bring your own SlackClient.
+- Register multiple event handlers for one event.
+- Register a single handler for multiple events by stacking decorators.
+- Configurable application shutdown.
+- Configurable retry logic in the event of lost connections.
+- Lightweight. Depends only on the official Python `slackclient`_ library.
 
 Code of Conduct
 ---------------
@@ -99,5 +87,7 @@ Code of Conduct
 Everyone interacting with the Layabout project's codebase is expected to follow
 the `Code of Conduct`_.
 
+.. _pip: https://pypi.org/project/pip/
+.. _PyPI: https://pypi.org/
 .. _slackclient: https://github.com/slackapi/python-slackclient
 .. _Code of Conduct: https://github.com/reillysiemens/layabout/blob/master/CODE_OF_CONDUCT.rst

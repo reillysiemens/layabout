@@ -1,5 +1,5 @@
-Contributing to this project
-============================
+Contributing Guidelines
+=======================
 
 Please follow these guidelines for contributing to this project.
 
@@ -7,7 +7,7 @@ Repository Management
 ---------------------
 
 - Fork this project into your own repository.
-- Follow the :ref:`version control <version_control>` guidelines.
+- Follow the `version control`_ guidelines.
 - No changes should reach the ``master`` branch except by way of a
   `pull request`_.
 
@@ -31,8 +31,8 @@ PRs must remain focused on fixing or addressing one thing (see `topic branch`_
 model). Make sure your pull request contains a clear title and description.
 Test coverage should not drop as a result. If you add code, you add tests.
 
-Be sure to follow the guidelines on :ref:`writing code <writing_code>` if you
-want your work considered for inclusion.
+Be sure to follow the guidelines on `writing code`_ if you want your work
+considered for inclusion.
 
 Handling Pull Requests
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -56,11 +56,11 @@ Nota Bene
   Progress) status will **not** be merged until the ``[WIP]`` prefix has been
   removed from the title. This is a good way to get feedback from maintainers
   if you are unsure of the changes you are making.
-- A PR that has received a 'Ship It' may not be accepted immediately.
+- A PR that has received a 'Ship It' may not be merged immediately.
 - You may be asked to rebase or squash your commits to keep an orderly version
   control history.
 
-.. _writing_code:
+.. _writing code:
 
 Writing Code
 ------------
@@ -70,13 +70,15 @@ Please follow these code conventions.
 Coding Style
 ~~~~~~~~~~~~
 
-- Follow `PEP8`_ guidelines
+- Follow :pep:`8` guidelines.
+- Try to respect the style of existing code.
+
+.. _version control:
 
 Version Control
 ~~~~~~~~~~~~~~~
 
-- :ref:`Fork <forking>` the :ref:`central repository <repo>` and work from a
-  clone of your own fork.
+- `Fork`_ the `central repository`_ and work from a clone of your own fork.
 - Follow the `topic branch`_ model and submit pull requests from branches named
   according to their purpose.
 - Review the `GitHub Flow`_ documentation and, in general, try to stick to the
@@ -87,8 +89,8 @@ Testing
 - Code **must** be tested. Write or update related unit tests so you don't have
   to manually retest the same thing many times.
 
-.. _repo: https://github.com/reillysiemens/layabout/
 .. _pull request: https://help.github.com/articles/using-pull-requests/
-.. _forking: https://help.github.com/articles/fork-a-repo/
 .. _topic branch: https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows#Topic-Branches
+.. _Fork: https://help.github.com/articles/fork-a-repo/
+.. _central repository: https://github.com/reillysiemens/layabout/
 .. _GitHub Flow: https://guides.github.com/introduction/flow/

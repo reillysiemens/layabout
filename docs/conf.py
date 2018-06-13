@@ -56,6 +56,7 @@ extensions = [
 
 intersphinx_mapping = {
     'python': ('http://python.readthedocs.io/en/latest/', None),
+    'slackclient': ('https://python-slackclient.readthedocs.io/en/latest/', None),
 }
 
 # Add any paths that contain templates here, relative to this directory.
