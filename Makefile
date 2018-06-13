@@ -52,7 +52,7 @@ lint: ## check style with flake8
 	flake8 $(SRC) tests
 
 type-check: ## run static analysis with mypy
-	mypy --ignore-missing-imports $(SRC)
+	mypy --ignore-missing-imports --disallow-untyped-defs $(SRC)
 
 test: ## run tests with pytest
 	pytest
