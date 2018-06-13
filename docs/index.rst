@@ -91,6 +91,14 @@ Not sold yet? Here's a list of features to sweeten the deal.
    Python 2. If you haven't moved over to Python 3 yet please consider the
    `many reasons to do so <http://www.asmeurer.com/python3-presentation/slides.html>`_.
 
+API Reference
+-------------
+
+.. toctree::
+   :maxdepth: 2
+
+   api
+
 Project Info
 ------------
 
@@ -103,15 +111,6 @@ Project Info
    authors
    contributing
    code_of_conduct
-
-.. TODO remove this and add API docs
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
 .. _pip: https://pypi.org/project/pip/
 .. _PyPI: https://pypi.org/
