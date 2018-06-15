@@ -1,6 +1,18 @@
 Layabout
 ========
 
+.. image:: https://img.shields.io/travis/reillysiemens/layabout/master.svg?style=flat-square&label=build
+    :target: https://travis-ci.org/reillysiemens/layabout
+    :alt: Unix build status on Travis CI
+
+.. image:: https://img.shields.io/coveralls/reillysiemens/layabout/master.svg?style=flat-square&label=coverage
+    :target: https://coveralls.io/github/reillysiemens/layabout?branch=master
+    :alt: Code coverage on Coveralls
+
+.. image:: https://img.shields.io/badge/license-ISC-blue.svg?style=flat-square
+    :target: https://github.com/reillysiemens/layabout/blob/master/LICENSE
+    :alt: ISC Licensed
+
 A small event handling library on top of the Slack RTM API.
 
 - Documentation: TODO
