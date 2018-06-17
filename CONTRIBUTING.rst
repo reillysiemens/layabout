@@ -65,12 +65,16 @@ Nota Bene
 Writing Code
 ------------
 
-Please follow these code conventions.
+Writing code is a creative process and there will always be exceptions to the
+rules, but it's good to maintain certain standards. In general, please follow
+these code conventions.
 
 Coding Style
 ~~~~~~~~~~~~
 
 - Follow :pep:`8` guidelines.
+- Code in this project **must** be linted. For convenience the project Makefile
+  contains a ``lint`` target to run the linting process for you.
 - Try to respect the style of existing code.
 
 .. _version control:
@@ -88,9 +92,30 @@ Testing
 ~~~~~~~
 - Code **must** be tested. Write or update related unit tests so you don't have
   to manually retest the same thing many times.
+- Tests for this project are written using the `pytest`_ framework. While it
+  isn't always achievable this project strives to maintain 100% test coverage.
+  For convenience the project Makefile contains a ``test`` target to run the
+  tests and generate coverage for you.
+- In addition to unit testing code in this project is statically type checked
+  using `mypy`_. For convenience the project Makefile contains a ``type-check``
+  target to run mypy for you.
+
+Documentation
+~~~~~~~~~~~~~
+- Public interfaces **must** be thoroughly documented. At a minimum this
+  includes inputs, return types, exceptions raised, and surprising behavior
+  like state changes.
+- Documentation for this project is written in `reStructuredText`_ and
+  generated with `Sphinx`_. For convenience the project Makefile contains a
+  ``docs`` to run Sphinx for you.
+
 
 .. _pull request: https://help.github.com/articles/using-pull-requests/
 .. _topic branch: https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows#Topic-Branches
 .. _Fork: https://help.github.com/articles/fork-a-repo/
 .. _central repository: https://github.com/reillysiemens/layabout/
 .. _GitHub Flow: https://guides.github.com/introduction/flow/
+.. _pytest: https://docs.pytest.org/en/latest/
+.. _mypy: http://www.mypy-lang.org/
+.. _reStructuredText: http://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
+.. _Sphinx: http://www.sphinx-doc.org/en/master/index.html
