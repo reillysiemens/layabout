@@ -14,11 +14,11 @@ Layabout
     :alt: ISC Licensed
 
 .. image:: https://img.shields.io/readthedocs/layabout/latest.svg?style=flat-square
-    :target: http://python-slackclient.readthedocs.io/en/latest/?badge=latest
+    :target: http://layabout.readthedocs.io/en/latest/?badge=latest
     :alt: Docs on Read the Docs
 
 .. image:: https://img.shields.io/pypi/pyversions/layabout.svg?style=flat-square&label=python
-    :target: https://pypi.python.org/pypi/layabout
+    :target: https://pypi.org/project/layabout
     :alt: Python Version
 
 .. image:: https://img.shields.io/pypi/v/layabout.svg?style=flat-square
