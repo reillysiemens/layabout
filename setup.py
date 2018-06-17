@@ -38,7 +38,7 @@ version = get_version((here / 'layabout.py').read_text())
 
 # Requirements.
 install_reqs = [
-    'slackclient==1.2.1',
+    'slackclient~=1.2',
 ]
 test_reqs = [
     'flake8',
