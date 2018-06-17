@@ -14,7 +14,7 @@ Layabout
     :alt: ISC Licensed
 
 .. image:: https://img.shields.io/readthedocs/layabout/latest.svg?style=flat-square
-    :target: http://layabout.readthedocs.io/en/latest/?badge=latest
+    :target: http://layabout.readthedocs.io/en/latest/
     :alt: Docs on Read the Docs
 
 .. image:: https://img.shields.io/pypi/pyversions/layabout.svg?style=flat-square&label=python
