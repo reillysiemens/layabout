@@ -21,7 +21,7 @@ from slackclient import SlackClient
 
 __author__ = 'Reilly Tucker Siemens'
 __email__ = 'reilly@tuckersiemens.com'
-__version__ = '1.0.0b'
+__version__ = '1.0.0b1'
 
 # Private type alias for the complex type of the handlers defaultdict.
 _Handlers = DefaultDict[str, List[Tuple[Callable, dict]]]

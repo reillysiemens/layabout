@@ -43,9 +43,6 @@ clean-docs:  ## remove docs artifacts
 	$(MAKE) -C docs clean
 
 docs: clean-docs ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/source/layabout.rst
-	rm -f docs/source/module.rst
-	sphinx-apidoc -f -o docs . setup.py
 	$(MAKE) -C docs html
 
 lint: ## check style with flake8
