@@ -1,27 +1,17 @@
 #!/usr/bin/env python3
 import re
 import sys
-from pathlib import Path
 
 from setuptools import setup
 
 if sys.version_info < (3, 6):
-    sys.exit('Only Python 3.6+ is supported.')
+    sys.exit('Layabout only supports Python 3.6+.')
+
+from pathlib import Path  # noqa: pathlib can't be imported in Python < 3.4.
 
 
-def get_version(string: str) -> str:
-    """
-    Get a version string from a string with a ``__version__`` attribute.
-
-    Args:
-        string: The string to search for a version substring.
-
-    Returns:
-        The parsed version string.
-
-    Raises:
-        RuntimeError: If a version string could not be matched.
-    """
+def get_version(string):
+    """ Retrieve the ``__version__`` attribute for Layabout. """
     flags = re.S
     pattern = r".*__version__ = '(.*?)'"
     match = re.match(pattern=pattern, string=string, flags=flags)
@@ -81,6 +71,7 @@ setup(
     ],
     test_suite='tests',
     tests_require=test_reqs,
+    python_requires='>=3.6',
     extras_require={
         'dev': dev_reqs,
         'docs': docs_reqs,
