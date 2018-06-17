@@ -19,13 +19,13 @@ Layabout
     :target: http://python-slackclient.readthedocs.io/en/latest/?badge=latest
     :alt: Docs on Read the Docs
 
+.. image:: https://img.shields.io/pypi/pyversions/layabout.svg?style=flat-square&label=python
+    :target: https://pypi.python.org/pypi/layabout
+    :alt: Python Version
+
 .. image:: https://img.shields.io/pypi/v/layabout.svg?style=flat-square
     :target: https://pypi.org/project/layabout
     :alt: Layabout on PyPI
-
-.. image:: https://img.shields.io/pypi/pyversions/layabout.svg?style=flat-square
-    :target: https://pypi.python.org/pypi/layabout
-    :alt: Python Version
 
 **Layabout** is a small event handling library on top of the Slack RTM API.
 
