@@ -14,6 +14,7 @@
 
 import sys
 import datetime as dt
+from collections import OrderedDict
 from pathlib import Path
 sys.path.insert(0, str(Path('..').resolve()))
 
@@ -99,7 +100,19 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    'github_user': 'reillysiemens',
+    'github_repo': 'layabout',
+    'github_type': 'star',
+    'note_bg': '#FFF59C',
+    # Used to populate the useful-links.html template.
+    'extra_nav_links': OrderedDict([
+        ('Layabout @ PyPI', 'https://pypi.org/project/layabout/'),
+        ('Layabout @ GitHub', 'https://github.com/reillysiemens/layabout/'),
+        ('Issue Tracker', 'https://github.com/reillysiemens/layabout/issues/'),
+        ('Slack RTM API Docs', 'https://api.slack.com/rtm'),
+    ]),
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -114,7 +127,15 @@ html_static_path = ['_static']
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
+html_sidebars = {
+    'index': [
+        'about.html', 'sidebar.html', 'useful-links.html', 'searchbox.html',
+    ],
+    '**': [
+        'about.html', 'sidebar.html', 'useful-links.html', 'localtoc.html',
+        'relations.html', 'searchbox.html',
+    ],
+}
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
