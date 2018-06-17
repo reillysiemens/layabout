@@ -1,2 +1,2 @@
 global-exclude *.py[cod] __pycache__
-include *requirements.txt
+include LICENSE
