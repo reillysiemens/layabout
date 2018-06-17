@@ -13,8 +13,6 @@ Layabout
     :target: https://github.com/reillysiemens/layabout/blob/master/LICENSE
     :alt: ISC Licensed
 
-.. TODO Figure out what the Read the Docs URL should actually be.
-
 .. image:: https://img.shields.io/readthedocs/layabout/latest.svg?style=flat-square
     :target: http://python-slackclient.readthedocs.io/en/latest/?badge=latest
     :alt: Docs on Read the Docs
@@ -56,6 +54,7 @@ Layabout
                       for e in events)
 
    if __name__ == '__main__':
+       # Automatically load app token from $SLACK_API_TOKEN and run!
        app.run(until=someone_leaves)
        print("Looks like someone left a channel!")
 
