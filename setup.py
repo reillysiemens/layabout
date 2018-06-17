@@ -2,10 +2,8 @@
 import re
 import sys
 from pathlib import Path
-from typing import List
 
 from setuptools import setup
-from pip.req import parse_requirements
 
 if sys.version_info < (3, 6):
     sys.exit('Only Python 3.6+ is supported.')
@@ -34,24 +32,25 @@ def get_version(string: str) -> str:
     raise RuntimeError('No version string could be matched')
 
 
-def get_reqs(path: Path) -> List[str]:
-    """
-    Get a list of pip-compatible version strings.
-
-    Args:
-        path: The path to a requirements file.
-
-    Returns:
-        The pip-compatible version strings.
-    """
-    return [str(r.req) for r in parse_requirements(str(path), session=False)]
-
 here = Path(__name__).cwd()
 readme = (here / 'README.rst').read_text()
 version = get_version((here / 'layabout.py').read_text())
-install_reqs = get_reqs(here / 'requirements.txt')
-test_reqs = get_reqs(here / 'test-requirements.txt')
-dev_reqs = get_reqs(here / 'dev-requirements.txt')
+
+# Requirements.
+install_reqs = [
+    'slackclient==1.2.1',
+]
+test_reqs = [
+    'flake8',
+    'mypy',
+    'pytest',
+    'pytest-cov',
+]
+docs_reqs = [
+    'Sphinx',
+    'sphinx-autodoc-typehints',
+]
+dev_reqs = test_reqs + docs_reqs
 
 setup(
     name='layabout',
@@ -84,6 +83,7 @@ setup(
     tests_require=test_reqs,
     extras_require={
         'dev': dev_reqs,
+        'docs': docs_reqs,
         'test': test_reqs,
     },
 )
