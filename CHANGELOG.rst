@@ -9,5 +9,6 @@ Beta release.
 Contributors
 ~~~~~~~~~~~~
 
+- Geoff Shannon (`@RadicalZephyr <https://github.com/RadicalZephyr>`_)
 - Mike Canoy (`@solus-impar <https://github.com/solus-impar>`_)
 - Tucker Siemens (`@reillysiemens <https://github.com/reillysiemens>`_)
