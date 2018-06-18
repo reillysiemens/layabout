@@ -33,7 +33,7 @@ class LayaboutError(Exception):
     """ Base error for all Layabout exceptions. """
 
 
-class MissingSlackToken(LayaboutError):
+class MissingToken(LayaboutError):
     """ Raised if a Slack API token could not be found. """
 
 
@@ -222,7 +222,7 @@ class Layabout:
 
         Raises:
             TypeError: If an unsupported connector is given.
-            MissingSlackToken: If no API token is available.
+            MissingToken: If no API token is available.
             FailedConnection: If connecting to the Slack API fails.
 
         .. _truncated exponential backoff:
@@ -300,7 +300,7 @@ def _create_slack_with_env_var(env_var: EnvVar) -> SlackClient:
     token = os.getenv(env_var)
     if token:
         return SlackClient(token=token)
-    raise MissingSlackToken(f"Could not acquire token from {env_var}")
+    raise MissingToken(f"Could not acquire token from {env_var}")
 
 
 @_create_slack.register(Token)
@@ -308,7 +308,7 @@ def _create_slack_with_token(token: Token) -> SlackClient:
     """ Create a :obj:`SlackClient` with a provided token. """
     if token != Token(''):
         return SlackClient(token=token)
-    raise MissingSlackToken("The empty string is an invalid Slack API token")
+    raise MissingToken("The empty string is an invalid Slack API token")
 
 
 @_create_slack.register(SlackClient)

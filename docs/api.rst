@@ -30,7 +30,7 @@ Exceptions
 .. autoexception:: layabout.LayaboutError
    :show-inheritance:
 
-.. autoexception:: layabout.MissingSlackToken
+.. autoexception:: layabout.MissingToken
    :show-inheritance:
 
 .. autoexception:: layabout.FailedConnection
