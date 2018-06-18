@@ -216,7 +216,7 @@ def test_layabout_can_connect_to_slack_with_env_var(monkeypatch):
     Test that layabout can discover and use a Slack API token from an
     environment variable when not given one directly.
     """
-    env_var = EnvVar('_TEST_SLACK_API_TOKEN')
+    env_var = EnvVar('_TEST_LAYABOUT_TOKEN')
     environ = {env_var: TOKEN}
     layabout = Layabout()
     SlackClient, slack = mock_slack(connections=(True,))
@@ -266,7 +266,7 @@ def test_layabout_raises_missing_slack_token_without_token(monkeypatch):
         # until will exit early here just to be safe.
         layabout.run(until=lambda e: False)
 
-    assert str(exc.value) == 'Could not acquire token from SLACK_API_TOKEN'
+    assert str(exc.value) == 'Could not acquire token from LAYABOUT_TOKEN'
 
 
 def test_layabout_raises_missing_slack_token_with_empty_token():

@@ -137,35 +137,9 @@ class Layabout:
            app.run()
     """
     def __init__(self) -> None:
-        self._env_var = EnvVar('SLACK_API_TOKEN')
+        self._env_var = EnvVar('LAYABOUT_TOKEN')
         self._slack: Optional[_SlackClientWrapper] = None
         self._handlers: _Handlers = defaultdict(list)
-
-    @staticmethod
-    def _format_parameter_error_message(name: str, sig: Signature,
-                                        num_params: int) -> str:
-        """
-        Format an error message for missing positional arguments.
-
-        Args:
-            name: The function name.
-            sig: The function's signature.
-            num_params: The number of function parameters.
-
-        Returns:
-            str: A formatted error message.
-        """
-        if num_params == 0:
-            plural = 's'
-            missing = 2
-            arguments = "'slack' and 'event'"
-        else:
-            plural = ''
-            missing = 1
-            arguments = "'event'"
-
-        return (f"{name}{sig} missing {missing} required positional "
-                f"argument{plural}: {arguments}")
 
     def handle(self, type: str, *, kwargs: dict = None) -> Callable:
         """
@@ -192,7 +166,7 @@ class Layabout:
             sig = signature(fn)
             num_params = len(sig.parameters)
             if num_params < 2:
-                raise TypeError(self._format_parameter_error_message(
+                raise TypeError(_format_parameter_error_message(
                     fn.__name__, sig, num_params))
 
             # Register a tuple of the callable and its kwargs, if any.
@@ -230,7 +204,7 @@ class Layabout:
             connector: A means of connecting to the Slack API. This can be an
                 API :obj:`Token`, an :obj:`EnvVar` from which a token can be
                 retrieved, or an established :obj:`SlackClient` instance. If
-                absent an attempt will be made to use the ``SLACK_API_TOKEN``
+                absent an attempt will be made to use the ``LAYABOUT_TOKEN``
                 environment variable.
             interval: The number of seconds to wait between fetching events
                 from the Slack API.
@@ -280,6 +254,32 @@ class Layabout:
 
             # Maybe don't pester the Slack API too much.
             time.sleep(interval)
+
+
+def _format_parameter_error_message(name: str, sig: Signature,
+                                    num_params: int) -> str:
+    """
+    Format an error message for missing positional arguments.
+
+    Args:
+        name: The function name.
+        sig: The function's signature.
+        num_params: The number of function parameters.
+
+    Returns:
+        str: A formatted error message.
+    """
+    if num_params == 0:
+        plural = 's'
+        missing = 2
+        arguments = "'slack' and 'event'"
+    else:
+        plural = ''
+        missing = 1
+        arguments = "'event'"
+
+    return (f"{name}{sig} missing {missing} required positional "
+            f"argument{plural}: {arguments}")
 
 
 @singledispatch

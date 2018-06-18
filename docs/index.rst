@@ -58,7 +58,7 @@ Release v\ |release|. (:ref:`Changelog <changelog>`)
                       for e in events)
 
    if __name__ == '__main__':
-       # Automatically load app token from $SLACK_API_TOKEN and run!
+       # Automatically load app token from $LAYABOUT_TOKEN and run!
        app.run(until=someone_leaves)
        print("Looks like someone left a channel!")
 
