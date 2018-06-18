@@ -137,7 +137,7 @@ class Layabout:
            app.run()
     """
     def __init__(self) -> None:
-        self._env_var = EnvVar('SLACK_API_TOKEN')
+        self._env_var = EnvVar('LAYABOUT_TOKEN')
         self._slack: Optional[_SlackClientWrapper] = None
         self._handlers: _Handlers = defaultdict(list)
 
@@ -230,7 +230,7 @@ class Layabout:
             connector: A means of connecting to the Slack API. This can be an
                 API :obj:`Token`, an :obj:`EnvVar` from which a token can be
                 retrieved, or an established :obj:`SlackClient` instance. If
-                absent an attempt will be made to use the ``SLACK_API_TOKEN``
+                absent an attempt will be made to use the ``LAYABOUT_TOKEN``
                 environment variable.
             interval: The number of seconds to wait between fetching events
                 from the Slack API.
