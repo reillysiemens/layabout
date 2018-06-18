@@ -53,7 +53,7 @@ setup(
     install_requires=install_reqs,
     license='ISCL',
     py_modules=['layabout'],
-    keywords='Slack RTM API',
+    keywords='Slack RTM API Bot Framework',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
