@@ -69,12 +69,19 @@ tag-release: check-origin-remote
 	git tag -a $(VERSION) -m "Release $(VERSION)"
 	git push origin $(VERSION)
 
-release: dist tag-release ## package and upload for public release
-	gpg --detach-sign -a dist/layabout-*.tar.gz
-	twine upload dist/*
+sign-artifacts:
+	# This doesn't have help text because it's intended to be a release helper.
+	# Apparently gpg isn't good with batching detached signatures...
+	# https://lists.gnupg.org/pipermail/gnupg-users/2002-August/014602.html
+	for artifact in dist/*; do \
+		gpg2 --detach-sign -a $$artifact; \
+	done
 
 dist: clean ## build source and wheel packages
 	python3 setup.py sdist bdist_wheel
+
+release: dist sign-artifacts tag-release ## package and upload for public release
+	twine upload dist/*
 
 install: clean ## install the package into the active Python's site-packages
 	python3 setup.py install
