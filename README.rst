@@ -67,6 +67,14 @@ To install **Layabout** use `pip`_ and `PyPI`_:
 
    pip install layabout
 
+What's It Good For?
+-------------------
+
+You can think of **Layabout** as a micro framework for building Slack bots.
+Since it wraps Slack's RTM API it does best with tasks like interacting with
+users, responding to channel messages, and monitoring events. If you want more
+ideas on what you can do with it check out the `examples`_.
+
 Features
 --------
 
@@ -88,5 +96,6 @@ the `Code of Conduct`_.
 
 .. _pip: https://pypi.org/project/pip/
 .. _PyPI: https://pypi.org/
+.. _examples: https://github.com/reillysiemens/layabout/tree/master/examples
 .. _slackclient: https://github.com/slackapi/python-slackclient
 .. _Code of Conduct: https://github.com/reillysiemens/layabout/blob/master/CODE_OF_CONDUCT.rst
