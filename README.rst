@@ -53,6 +53,7 @@ Layabout
        return not any(e.get('type') == 'member_left_channel'
                       for e in events)
 
+
    if __name__ == '__main__':
        # Automatically load app token from $LAYABOUT_TOKEN and run!
        app.run(until=someone_leaves)
