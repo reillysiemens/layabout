@@ -24,7 +24,7 @@ Now you can run the example with:
 
 .. code-block:: bash
 
-   pipenv run python example.py
+   pipenv run example
 
 Explore
 =======
@@ -39,6 +39,10 @@ A Brief Overview of Each Example
 
 - `simple`_: Registers a single catch-all event handler and prints it to
   ``stdout``.
+- `early-connection`_: Connects with an existing SlackClient and sends a
+  message before proceeding to the normal event handling loop.
+- `runtime-handler-definitions`_: Debugs only messages in a channel determined
+  from user input by programmatically creating a handler.
 
 .. _Pipenv: https://docs.pipenv.org/#install-pipenv-today
 .. _simple: simple
