@@ -41,8 +41,10 @@ A Brief Overview of Each Example
   ``stdout``.
 - `early-connection`_: Connects with an existing SlackClient and sends a
   message before proceeding to the normal event handling loop.
-- `runtime-handler-definitions`_: Debugs only messages in a channel determined
+- `runtime-handler-definition`_: Debugs only messages in a channel determined
   from user input by programmatically creating a handler.
 
 .. _Pipenv: https://docs.pipenv.org/#install-pipenv-today
 .. _simple: simple
+.. _early-connection: early-connection
+.. _runtime-handler-definition: runtime-handler-definition
