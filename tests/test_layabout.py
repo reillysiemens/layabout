@@ -9,7 +9,7 @@ from layabout import (
     EnvVar,
     FailedConnection,
     Layabout,
-    MissingSlackToken,
+    MissingToken,
     Token,
     _SlackClientWrapper,
     _truncated_exponential,
@@ -252,31 +252,30 @@ def test_layabout_raises_type_error_with_string_connector():
                               'instead of str')
 
 
-def test_layabout_raises_missing_slack_token_without_token(monkeypatch):
+def test_layabout_raises_missing_token_without_token(monkeypatch):
     """
-    Test that layabout raises a MissingSlackToken if there is no Slack API
-    token for it to use.
+    Test that layabout raises a MissingToken if there is no Slack API token for
+    it to use.
     """
     environ = dict()
     layabout = Layabout()
 
     monkeypatch.setattr(os, 'environ', environ)
 
-    with pytest.raises(MissingSlackToken) as exc:
+    with pytest.raises(MissingToken) as exc:
         # until will exit early here just to be safe.
         layabout.run(until=lambda e: False)
 
     assert str(exc.value) == 'Could not acquire token from LAYABOUT_TOKEN'
 
 
-def test_layabout_raises_missing_slack_token_with_empty_token():
+def test_layabout_raises_missing_token_with_empty_token():
     """
-    Test that layabout raises a MissingSlackToken if given an empty Slack API
-    token.
+    Test that layabout raises a MissingToken if given an empty Slack API token.
     """
     layabout = Layabout()
 
-    with pytest.raises(MissingSlackToken) as exc:
+    with pytest.raises(MissingToken) as exc:
         # until will exit early here just to be safe.
         layabout.run(connector=Token(''), until=lambda e: False)
 
