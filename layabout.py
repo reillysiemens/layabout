@@ -6,7 +6,6 @@ from typing import (
     Any,
     Callable,
     DefaultDict,
-    Dict,
     List,
     NoReturn,
     Optional,
@@ -14,7 +13,7 @@ from typing import (
     Union,
 )
 from inspect import signature, Signature
-from functools import singledispatch, wraps
+from functools import singledispatch
 from collections import defaultdict
 
 from slackclient import SlackClient
@@ -171,14 +170,8 @@ class Layabout:
 
             # Register a tuple of the callable and its kwargs, if any.
             self._handlers[type].append((fn, kwargs or {}))
+            return fn
 
-            @wraps(fn)
-            def wrapper(slack: SlackClient, event: Dict[str, Any],
-                        **kwargs: Any) -> Any:
-                # We don't actually do anything with the return value, but this
-                # might make unit testing easier for users.
-                return fn(slack, event, **kwargs)
-            return wrapper
         return decorator
 
     def _ensure_slack(self, connector: Any, retries: int,
