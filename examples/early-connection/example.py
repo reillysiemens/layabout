@@ -43,7 +43,9 @@ def main():
     token = os.getenv(env_var)
 
     if not token:
-        sys.exit(f"Couldn't load ${env_var}. Try setting it.")
+        sys.exit(f"Couldn't load ${env_var}. Try setting it.\n"
+                  "Learn more about available token types here:\n"
+                  "https://api.slack.com/docs/token-types.")
 
     slack = SlackClient(token=token)
 
@@ -53,7 +55,7 @@ def main():
     # Send a message to some channel before running the event loop!
     send_message(slack)
 
-    print('Listening for typing events. Press Ctrl-C to quit.\n')
+    print('Listening for typing events. Press Ctrl-C to quit.')
     # Now run the loop. This will re-use the existing SlackClient connection!
     app.run(connector=slack)
 

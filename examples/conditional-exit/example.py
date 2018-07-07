@@ -1,4 +1,6 @@
-from layabout import Layabout
+import sys
+
+from layabout import Layabout, MissingToken
 
 app = Layabout()
 
@@ -21,7 +23,13 @@ def main():
         return True
 
     # This will run only until someone enters the magic word(s) into a channel.
-    app.run(until=someone_says_the_magic_word)
+    try:
+      app.run(until=someone_says_the_magic_word)
+    except MissingToken:
+      sys.exit('Unable to find Slack API token.\n'
+               'Learn more about available token types here:\n'
+               'https://api.slack.com/docs/token-types.')
+
     print(f'Someone said "{magic}"!')
 
 
