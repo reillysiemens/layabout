@@ -44,8 +44,8 @@ def main():
 
     if not token:
         sys.exit(f"Couldn't load ${env_var}. Try setting it.\n"
-                  "Learn more about available token types here:\n"
-                  "https://api.slack.com/docs/token-types.")
+                 "Learn more about available token types here:\n"
+                 "https://api.slack.com/docs/token-types.")
 
     slack = SlackClient(token=token)
 

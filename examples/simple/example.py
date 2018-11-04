@@ -1,4 +1,4 @@
-import  sys
+import sys
 
 from pprint import pformat
 from layabout import Layabout, MissingToken
@@ -18,8 +18,8 @@ if __name__ == "__main__":
     print('Printing all events. Press Ctrl-C to quit.')
 
     try:
-      app.run()
+        app.run()
     except MissingToken:
-      sys.exit('Unable to find Slack API token.\n'
-            'Learn more about available token types here:\n'
-            'https://api.slack.com/docs/token-types.')
+        sys.exit('Unable to find Slack API token.\n'
+                 'Learn more about available token types here:\n'
+                 'https://api.slack.com/docs/token-types.')
