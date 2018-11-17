@@ -34,11 +34,11 @@ def main():
         if event.get('channel') == debug_channel:
             print(f"Got event in #{channel_name}:\n{pformat(event)}\n")
     try:
-      app.run()
+        app.run()
     except MissingToken:
-      sys.exit('Unable to find Slack API token.\n'
-               'Learn more about available token types here:\n'
-               'https://api.slack.com/docs/token-types.')
+        sys.exit('Unable to find Slack API token.\n'
+                 'Learn more about available token types here:\n'
+                 'https://api.slack.com/docs/token-types.')
 
 
 if __name__ == '__main__':
