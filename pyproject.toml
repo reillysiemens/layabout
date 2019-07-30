@@ -29,6 +29,38 @@ python = "^3.6"
 slackclient = "~1.2"
 
 [tool.poetry.dev-dependencies]
+flake8 = "^3.7.8"
+mypy = "^0.720"
+pytest = "^5.0.1"
+pytest-cov = "^2.7.1"
+tox = "^3.13.2"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+minversion = 3.12.0
+skipsdist = true
+skip_missing_interpreters = true
+envlist = py36, py37, py38
+
+[testenv]
+whitelist_externals = poetry
+skip_install = true
+commands =
+    poetry install --verbose
+    poetry run flake8 --ignore=E501 --max-complexity=12 layabout.py tests/
+    poetry run mypy \
+        --ignore-missing-imports \
+        --disallow-untyped-defs \
+        layabout.py
+    poetry run pytest \
+        --verbose \
+        --cov=layabout \
+        --cov-report=term-missing \
+        --cov-fail-under=90 \
+        --cov-branch \
+        {posargs}
+"""
 
 [build-system]
 requires = ["poetry>=0.12"]
