@@ -1,25 +1,17 @@
+dist: xenial
 language: python
-matrix:
-  include:
-    - python: 3.6
-      dist: trusty
-      sudo: false
-    - python: 3.7
-      dist: xenial
-      sudo: true
-env:
-  global:
-    - NEWEST_PYTHON=3.7
+python:
+  - 3.6
+  - 3.7
+  - 3.8-dev
 install:
-  - pip install -e .'[test]'
+  # https://github.com/sdispater/poetry/issues/613
+  # - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python3 - --preview --yes
+  # - source $HOME/.poetry/env
+  - pip install --upgrade pip coveralls tox tox-travis poetry
 script:
-  - make lint
-  - make type-check
-  - make test
-after_success:         
-  - |                  
-    if [[ $TRAVIS_PYTHON_VERSION == $NEWEST_PYTHON ]]; then                                    
-      pip install python-coveralls && coveralls                                                
-    fi                 
-notifications:         
+  - tox
+after_success:
+  - coveralls
+notifications:
   email: false
