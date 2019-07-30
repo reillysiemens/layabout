@@ -4,7 +4,7 @@ Examples of How to Use Layabout
 This directory contains a bunch of examples showcasing various features of
 Layabout. Getting started with all of them is roughly the same process.
 
-Before going further, make sure you have `Pipenv`_ installed.
+Before going further, make sure you have `Poetry`_ installed.
 
 Install!
 --------
@@ -13,7 +13,9 @@ In the directory of the example you want to try out, run:
 
 .. code-block:: bash
 
-   pipenv install
+   python3 -m venv venv
+   source ./venv/bin/activate
+   poetry install -develop .
 
 Thats it!
 
@@ -24,7 +26,7 @@ Now you can run the example with:
 
 .. code-block:: bash
 
-   pipenv run example
+   python3 example.py
 
 Explore
 =======
@@ -46,7 +48,7 @@ A Brief Overview of Each Example
 - `conditional-exit`_: Keep the event loop going until someone says the magic
   words determined by the user.
 
-.. _Pipenv: https://docs.pipenv.org/#install-pipenv-today
+.. _Poetry: https://poetry.eustace.io/docs/#installation
 .. _simple: simple
 .. _early-connection: early-connection
 .. _runtime-handler-definition: runtime-handler-definition
