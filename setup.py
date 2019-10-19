@@ -31,14 +31,14 @@ install_reqs = [
     'slackclient~=1.2',
 ]
 test_reqs = [
-    'flake8',
-    'mypy',
-    'pytest',
-    'pytest-cov',
+    'flake8~=3.7.8',
+    'mypy~=0.740.0',
+    'pytest~=5.2',
+    'pytest-cov~=2.8',
 ]
 docs_reqs = [
-    'Sphinx',
-    'sphinx-autodoc-typehints',
+    'Sphinx~=2.2',
+    'sphinx-autodoc-typehints~=1.8',
 ]
 dev_reqs = test_reqs + docs_reqs
 
