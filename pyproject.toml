@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "layabout"
+version = "1.0.1"
+description = "A small event handling library on top of the Slack RTM API."
+authors = ["Reilly Tucker Siemens <reilly@tuckersiemens.com>"]
+license = "ISC"
+readme = "README.rst"
+repository = "https://github.com/reillysiemens/layabout"
+keywords = ["Slack", "RTM", "API", "Bot", "Framework"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: ISC License (ISCL)",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: POSIX :: BSD :: FreeBSD",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Communications :: Chat",
+    "Topic :: Software Development :: Libraries",
+]
+include = ["LICENSE"]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+slackclient = "^1.2"
+
+[tool.poetry.dev-dependencies]
+mypy = "^0.740.0"
+flake8 = "^3.7.8"
+pytest = "^5.2"
+pytest-cov = "^2.8"
+sphinx = "^2.2"
+sphinx-autodoc-typehints = "^1.8"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
