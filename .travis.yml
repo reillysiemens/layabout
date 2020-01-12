@@ -10,10 +10,8 @@ matrix:
 env:
   global:
     - NEWEST_PYTHON=3.7
-before_install:
-  - pip install poetry
 install:
-  - poetry install
+  - pip install -e .'[test]'
 script:
   - make lint
   - make type-check
