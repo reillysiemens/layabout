@@ -29,6 +29,10 @@ Release v\ |release|. (:ref:`Changelog <changelog>`)
     :target: https://pypi.org/project/layabout
     :alt: Layabout on PyPI
 
+.. warning::
+
+   Layabout is `deprecated`_. There will be no further support.
+
 **Layabout** is a small event handling library on top of the Slack RTM API.
 
 .. code-block:: python
@@ -107,6 +111,7 @@ Project Info
 .. toctree::
    :maxdepth: 1
 
+   deprecation
    why
    changelog
    license
@@ -120,6 +125,7 @@ Project Info
    Python 2. If you haven't moved over to Python 3 yet please consider the
    `many reasons to do so <http://www.asmeurer.com/python3-presentation/slides.html>`_.
 
+.. _deprecated: deprecation.html
 .. _pip: https://pypi.org/project/pip/
 .. _PyPI: https://pypi.org/
 .. _examples: https://github.com/reillysiemens/layabout/tree/master/examples
