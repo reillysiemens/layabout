@@ -26,7 +26,7 @@ Layabout
     :alt: Layabout on PyPI
 
 ⚠️ Layabout is `deprecated`_. There will be no further support. ⚠️
-=================================================================
+==================================================================
 
 **Layabout** is a small event handling library on top of the Slack RTM API.
 
