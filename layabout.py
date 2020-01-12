@@ -31,7 +31,7 @@ warnings.warn(
 
 __author__ = 'Reilly Tucker Siemens'
 __email__ = 'reilly@tuckersiemens.com'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 # Private type alias for the complex type of the handlers defaultdict.
 _Handlers = DefaultDict[str, List[Tuple[Callable, dict]]]
