@@ -25,6 +25,9 @@ Layabout
     :target: https://pypi.org/project/layabout
     :alt: Layabout on PyPI
 
+⚠️ Layabout is `deprecated`_. There will be no further support. ⚠️
+=================================================================
+
 **Layabout** is a small event handling library on top of the Slack RTM API.
 
 .. code-block:: python
@@ -95,6 +98,7 @@ Code of Conduct
 Everyone interacting with the Layabout project's codebase is expected to follow
 the `Code of Conduct`_.
 
+.. _deprecated: https://layabout.readthedocs.io/en/latest/deprecation.html
 .. _pip: https://pypi.org/project/pip/
 .. _PyPI: https://pypi.org/
 .. _examples: https://github.com/reillysiemens/layabout/tree/master/examples

@@ -2,6 +2,7 @@ import os
 import time
 import random
 import logging
+import warnings
 from typing import (
     Any,
     Callable,
@@ -18,9 +19,19 @@ from collections import defaultdict
 
 from slackclient import SlackClient
 
+warnings.warn(
+    (
+        "Layabout is deprecated. See "
+        "https://layabout.readthedocs.io/en/latest/deprecation.html "
+        "for more information."
+    ),
+    category=DeprecationWarning,
+    stacklevel=2,
+)
+
 __author__ = 'Reilly Tucker Siemens'
 __email__ = 'reilly@tuckersiemens.com'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 # Private type alias for the complex type of the handlers defaultdict.
 _Handlers = DefaultDict[str, List[Tuple[Callable, dict]]]
